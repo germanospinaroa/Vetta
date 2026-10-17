@@ -8,12 +8,12 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "NO EMPRENDAS TODAVÍA. | VETTA",
-  description: "Aprende a evaluar oportunidades de negocio antes de comprometer tu tiempo, tu dinero o tu reputación.",
-  applicationName: "VETTA",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  title: "NO EMPRENDAS TODAVÍA. | Masterclass en vivo",
+  description: "Aprende a evaluar oportunidades de negocio antes de comprometer tu tiempo y tu dinero. Dos encuentros en vivo y una herramienta práctica para tomar mejores decisiones.",
+  applicationName: "NO EMPRENDAS TODAVÍA.",
+  metadataBase: new URL(process.env.VETTA_ENV === "production" ? "https://vetta-beryl.vercel.app" : (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000")),
   alternates: { canonical: "/" },
-  openGraph: { title: "NO EMPRENDAS TODAVÍA. | VETTA", description: "Aprende a evaluar oportunidades de negocio antes de comprometer tu tiempo, tu dinero o tu reputación.", type: "website" },
+  openGraph: { title: "NO EMPRENDAS TODAVÍA. | Masterclass en vivo", description: "Aprende a evaluar oportunidades de negocio antes de comprometer tu tiempo y tu dinero. Dos encuentros en vivo y una herramienta práctica para tomar mejores decisiones.", type: "website" },
   robots: { index: process.env.VETTA_ENV === "production", follow: true },
 };
 

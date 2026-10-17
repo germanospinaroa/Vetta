@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getCountries, getCountryCallingCode } from "libphonenumber-js";
 import { readAttribution } from "@/lib/tracking";
 
@@ -10,7 +11,8 @@ const countries = getCountries().map((code) => [code, `${code} (+${getCountryCal
 
 type Result = { ok: true; registrationCode: string; whatsappHref?: string; mode: "TEST" | "LIVE" } | { ok: false; message: string };
 
-export function RegistrationForm() {
+export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSuccess?: boolean }) {
+  const router = useRouter();
   const [state, setState] = useState<FormState>("idle");
   const [result, setResult] = useState<Result | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,6 +55,12 @@ export function RegistrationForm() {
         void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: data.ok ? "unknown" : data.code || "request_failed" } }) });
         return;
       }
+      if (redirectOnSuccess) {
+        window.sessionStorage.setItem("vetta-registration-confirmed-v1", data.registrationCode);
+        window.sessionStorage.setItem("vetta-registration-name-v1", String(payload.name || ""));
+        router.push(`/confirmacion?code=${encodeURIComponent(data.registrationCode)}` as never);
+        return;
+      }
       setState("success");
       setResult(data);
     } catch {
@@ -82,16 +90,16 @@ export function RegistrationForm() {
   }
 
   return (
-    <form id="demo-form" className="registration-form" onSubmit={submit} onFocus={markStarted} noValidate>
+    <form id="demo-form" className="registration-form" onSubmit={submit} onFocus={markStarted}>
       <div className="form-heading"><span className="section-kicker">Reserva tu lugar</span><h2>Empieza con<br /><em>mejores preguntas.</em></h2><p>Regístrate para vivir los dos encuentros. No necesitas tener una idea de negocio definida.</p></div>
       <div className="form-fields">
         <div className="field"><label htmlFor="name">Nombre</label><input id="name" name="name" autoComplete="name" required placeholder="Tu nombre…" aria-describedby="name-help" /><span id="name-help" className="field-help">Solo para identificar tu registro.</span></div>
         <div className="field"><label htmlFor="whatsapp">WhatsApp</label><input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" required placeholder="300 000 0000…" aria-describedby="whatsapp-help" /><span id="whatsapp-help" className="field-help">Incluye el número que revisas con más frecuencia.</span></div>
         <div className="field-row"><div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" required placeholder="Tu ciudad…" /></div><div className="field"><label htmlFor="country">País</label><select id="country" name="country" defaultValue="CO" required>{countries.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div></div>
-        <label className="consent"><input type="checkbox" name="consent" required /><span>Acepto que Elite Focus gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso pendiente</a>.</span></label>
+        <label className="consent"><input type="checkbox" name="consent" required /><span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso de privacidad</a>.</span></label>
         {state === "error" && <p className="form-error" role="alert">{result && !result.ok ? result.message : "Revisa los campos y vuelve a intentarlo."}</p>}
         <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Recibiendo tu registro…" : "Reservar mi lugar"}<span aria-hidden="true">↗</span></button>
-        <p className="form-footnote">Experiencia educativa organizada por Elite Focus. La participación no implica comprar productos ni incorporarte al negocio.</p>
+        <p className="form-footnote">La participación no implica comprar productos ni incorporarte a un negocio.</p>
       </div>
     </form>
   );

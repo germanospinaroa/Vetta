@@ -166,3 +166,25 @@ VETTA presents a calm, high-precision decision environment: a dark product inter
 - Selection feedback is immediate in state and transitions over 220–300ms.
 - No looping ambient animation, scrolljacking, parallax, or layout animation.
 - `prefers-reduced-motion` removes travel and panel animation while preserving all content and state feedback.
+## 14. Current public sales landing — approved execution direction
+
+The public landing at `/` uses the approved `NO EMPRENDAS TODAVÍA.` sales direction. VETTA is an internal project name and must not appear in public landing copy, metadata or shareable content.
+
+### Concrete visual system
+
+- Background: `#F5F6F8`; white surfaces: `#FFFFFF`; ink: `#142238`; body text: `#35435A`; secondary text: `#617086`; action blue: `#2758E9`; hover: `#1746CD`; soft blue: `#EAF0FF`; gift dark: `#142238`; gift accent: `#F5C879`; border: `#E2E7EF`.
+- Manrope is used for headings, CTAs and labels. Inter is used for paragraphs and form copy. No serif or decorative italic type.
+- Rounded corners are 12–18px. Interactive controls are at least 54px high. Shadows are broad, soft and restrained.
+- Desktop uses a 1200px content shell and a 52/48 hero split. Mobile is designed at 390px and 360px first, with the CTA inside the first viewport.
+
+### Commercial architecture
+
+The landing has exactly four commercial zones: hero, identification, the two-session masterclass, and the gift/closing. It contains no form. Every CTA points to `/registro`; `/registro` blocks honestly while the cohort is not open. `/confirmacion` is only unlocked after a successful persisted registration in the browser session.
+
+### Visual assets and motion
+
+The hero uses the original editorial photograph documented in `VETTA-IMAGE-SOURCES.md`. The gift uses a real-criteria HTML rendering of `/matriz` over an original tablet backdrop. Motion is limited to opacity/transform reveals, CTA feedback and sticky CTA visibility; content remains readable without animation and all transitions are disabled under `prefers-reduced-motion`.
+
+### Rejected history
+
+The former beige/terracotta editorial system, dark-tech prototype, and concept A/B pages remain historical or temporary references only. They are not to be reused for the public landing without explicit approval.
