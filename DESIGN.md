@@ -124,3 +124,45 @@ Use an editorial “decision line”: a thin warm line and paired markers connec
 - [ ] Approve legal identity, privacy notice, terms, and retention period.
 - [ ] Decide whether to self-host Manrope and Instrument Serif before production.
 - [ ] Approve analytics destination and consent policy.
+
+## 13. Current approved direction — Dark premium technology
+
+This section supersedes the v1 editorial direction for the public landing. The previous decisions remain in this file as history and continue to govern `/matriz`, legal pages, and operational surfaces until explicitly updated.
+
+### Visual thesis
+
+VETTA presents a calm, high-precision decision environment: a dark product interface that lets a visitor experience the act of evaluating an opportunity before asking them to register. The signature move is the interactive opportunity evaluator in the hero, not decorative geometry.
+
+### Tokens
+
+| Token | Value | Use |
+|---|---|---|
+| `--vt-bg` | `#080B12` | page background |
+| `--vt-surface` | `#121824` | raised sections and panels |
+| `--vt-surface-2` | `#1A2230` | controls and form fields |
+| `--vt-ink` | `#F8FAFC` | primary text |
+| `--vt-muted` | `#A6B2C3` | secondary text and supporting copy |
+| `--vt-accent` | `#5271FF` | primary CTA and active states |
+| `--vt-cyan` | `#75D8E7` | emphasis, focus, status and progression |
+
+### Typography
+
+- Geist Sans is the only interface and display family.
+- Geist Mono is reserved for compact technical labels and status metadata.
+- No Instrument Serif, cursive display type, or decorative italic treatment.
+- Hero display range: `clamp(3.45rem, 7.5vw, 7.3rem)` desktop and `clamp(3.45rem, 16vw, 5.4rem)` mobile.
+
+### Layout and components
+
+- Maximum content width: 1240px; desktop hero uses a 52/48 two-column grid.
+- Mobile is intentionally recomposed into a short readable hero followed by the evaluator.
+- The evaluator uses native tab buttons, local-only state, no score, no personal data, and no lead qualification.
+- The matrix preview uses the same criteria and questions as `/matriz`; it is not a fabricated dashboard.
+- The registration panel renders only when a configured open cohort and persistence-ready path exist. Otherwise it shows `Próxima edición en preparación.` without a false action.
+
+### Motion
+
+- Page entry and evaluator panel changes use opacity and transform only.
+- Selection feedback is immediate in state and transitions over 220–300ms.
+- No looping ambient animation, scrolljacking, parallax, or layout animation.
+- `prefers-reduced-motion` removes travel and panel animation while preserving all content and state feedback.
