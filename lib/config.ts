@@ -17,10 +17,14 @@ const clean = (value: string | undefined) => value?.trim() || undefined;
 
 export function getPublicConfig() {
   const demoMode = process.env.VETTA_DEMO_MODE === "true";
+  const configuredStatus = clean(process.env.VETTA_COHORT_STATUS);
+  const status = configuredStatus === "open" || configuredStatus === "closed" || configuredStatus === "finished" || configuredStatus === "draft"
+    ? configuredStatus
+    : "draft";
   const cohort: PublicCohort = {
     id: clean(process.env.NEXT_PUBLIC_ACTIVE_COHORT_ID) || "demo-cohort",
     name: demoMode ? "Cohorte de prueba" : "Cohorte pendiente de configuración",
-    status: demoMode ? "open" : "draft",
+    status: demoMode ? "open" : status,
     timezone: "America/Bogota",
     tuesdayLabel: clean(process.env.NEXT_PUBLIC_TUESDAY_LABEL),
     thursdayLabel: clean(process.env.NEXT_PUBLIC_THURSDAY_LABEL),
