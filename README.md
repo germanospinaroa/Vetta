@@ -20,12 +20,12 @@ npm run verify
 
 ## Configuración de Supabase
 
-1. Crear un proyecto Supabase separado de cualquier proyecto existente.
+1. Usar el proyecto Supabase autorizado para VETTA y confirmar que su referencia coincide con `NEXT_PUBLIC_SUPABASE_URL`.
 2. Copiar su URL y clave publicable a `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 3. Mantener `SUPABASE_SERVICE_ROLE_KEY` únicamente en el servidor; nunca en `NEXT_PUBLIC_*` ni en el navegador.
 4. Aplicar `supabase/migrations/0001_initial.sql` mediante el flujo controlado de Supabase. Esta entrega no ejecuta migraciones remotas.
 5. Crear el usuario administrador en Supabase Auth y añadir su `user_id` a `admin_members`. La autorización del panel depende de esa tabla y de RLS; `VETTA_ADMIN_EMAILS` no sustituye a la autorización de base de datos.
-6. Crear la primera cohorte en la tabla `cohorts`, con fechas, zona horaria, enlaces y número oficial verificados. Configurar su identificador en `NEXT_PUBLIC_ACTIVE_COHORT_ID`.
+6. Crear o verificar la cohorte en la tabla `cohorts`, con fechas, zona horaria, enlaces y número oficial verificados. Configurar su identificador en `NEXT_PUBLIC_ACTIVE_COHORT_ID` y mantener `VETTA_COHORT_STATUS=draft` hasta completar las pruebas controladas.
 7. Revisar legalmente el aviso de privacidad y los términos antes de abrir registros reales.
 
 Mientras no existan esos valores, la landing permanece en modo seguro de preapertura y el panel administrativo no se muestra.
