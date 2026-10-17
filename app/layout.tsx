@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   applicationName: "NO EMPRENDAS TODAVÍA.",
   metadataBase: new URL(siteUrl),
   alternates: { canonical: "/" },
-  openGraph: { title: "NO EMPRENDAS TODAVÍA. | Masterclass en vivo", description: "Aprende a evaluar oportunidades de negocio antes de comprometer tu tiempo y tu dinero. Dos encuentros en vivo y una herramienta práctica para tomar mejores decisiones.", type: "website" },
+  openGraph: { title: "NO EMPRENDAS TODAVÍA. | Masterclass en vivo", description: "Aprende a evaluar oportunidades de negocio antes de comprometer tu tiempo y tu dinero. Dos encuentros en vivo y una herramienta práctica para tomar mejores decisiones.", type: "website", url: siteUrl },
   robots: { index: process.env.VETTA_ENV === "production", follow: true },
 };
 
