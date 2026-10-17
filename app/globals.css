@@ -16,9 +16,6 @@
 .concept-header nav a{display:inline-flex;align-items:center;min-height:44px;padding-block:10px}
 .concept-a .cinema-sessions .concept-overline{color:#182f3d}
 .concept-a .cinema-act-dark span{color:#d7a27f}
-.concept-b .field-coordinates span:first-child{font-size:0}
-.concept-b .field-coordinates span:first-child::after{content:"FIELD / 02";font-size:.6rem}
 @keyframes choice-plane-arrival{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 .concept-b .choice-plane svg{animation:choice-plane-arrival 900ms cubic-bezier(.22,.61,.36,1) both}
-@media(max-width:640px){.concept-b .field-coordinates span:first-child::after{font-size:.52rem}}
 @media(prefers-reduced-motion:reduce){.concept-b .choice-plane svg{animation:none}}
