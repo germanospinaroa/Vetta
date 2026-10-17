@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { FAQ } from "@/components/faq";
 import { RegistrationForm } from "@/components/registration-form";
 import { EventBeacon } from "@/components/event-beacon";
@@ -39,6 +39,17 @@ export function VettaLanding({ cohort }: { cohort: PublicCohort }) {
   const [active, setActive] = useState<OpportunityKey>("ecommerce");
   const activeOpportunity = opportunities[active];
   const canRegister = cohort.status === "open" && Boolean(cohort.tuesdayLabel && cohort.thursdayLabel);
+  const opportunityKeys = Object.keys(opportunities) as OpportunityKey[];
+
+  function handleOpportunityKey(event: KeyboardEvent<HTMLButtonElement>, key: OpportunityKey) {
+    const currentIndex = opportunityKeys.indexOf(key);
+    const nextIndex = event.key === "ArrowRight" ? (currentIndex + 1) % opportunityKeys.length : event.key === "ArrowLeft" ? (currentIndex - 1 + opportunityKeys.length) % opportunityKeys.length : -1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    const nextKey = opportunityKeys[nextIndex];
+    setActive(nextKey);
+    requestAnimationFrame(() => document.getElementById(`vt-tab-${nextKey}`)?.focus());
+  }
 
   return (
     <main className="vt-landing" id="main-content">
@@ -70,7 +81,7 @@ export function VettaLanding({ cohort }: { cohort: PublicCohort }) {
             <div className="vt-explorer-top"><span className="vt-mono">VETTA / CRITERIO 01</span><span className="vt-live-dot">INTERACTIVO</span></div>
             <div className="vt-explorer-heading"><p className="vt-mono">Antes de decidir,</p><h2 id="vt-explorer-title">evalúa.</h2></div>
             <div className="vt-option-list" role="tablist" aria-label="Oportunidades para evaluar">
-              {(Object.keys(opportunities) as OpportunityKey[]).map((key) => <button key={key} className={`vt-option ${active === key ? "is-active" : ""}`} type="button" role="tab" aria-selected={active === key} aria-controls="vt-evaluator-panel" onClick={() => setActive(key)}><span>{opportunities[key].label}</span><span aria-hidden="true">{active === key ? "—" : "↗"}</span></button>)}
+              {opportunityKeys.map((key) => <button key={key} id={`vt-tab-${key}`} className={`vt-option ${active === key ? "is-active" : ""}`} type="button" role="tab" aria-selected={active === key} aria-controls="vt-evaluator-panel" aria-labelledby={`vt-tab-${key}`} tabIndex={active === key ? 0 : -1} onKeyDown={(event) => handleOpportunityKey(event, key)} onClick={() => setActive(key)}><span>{opportunities[key].label}</span><span aria-hidden="true">{active === key ? "—" : "↗"}</span></button>)}
             </div>
             <div className="vt-question-panel" id="vt-evaluator-panel" role="tabpanel" aria-live="polite" aria-label={`Preguntas para evaluar ${activeOpportunity.label}`} key={active}>
               <p className="vt-question-kicker">{activeOpportunity.kicker}</p>
@@ -94,7 +105,7 @@ export function VettaLanding({ cohort }: { cohort: PublicCohort }) {
         <section className="vt-register" id="vt-register" aria-labelledby="vt-register-title"><div className="vt-shell vt-register-grid"><div className="vt-section-intro"><p className="vt-eyebrow">Reserva tu lugar</p><h2 id="vt-register-title">Tu próxima decisión merece <span>más criterio.</span></h2><p>Reserva tu lugar en los dos encuentros y aprende a evaluar oportunidades antes de comprometerte con ellas.</p><div className="vt-trust-line"><span>Elite Focus</span><span>Vinculado a Zilis</span><span>Sin promesas de ingresos</span></div></div>{canRegister ? <div className="vt-form-shell"><RegistrationForm /></div> : <div className="vt-preopening"><span className="vt-mono">REGISTRO / PREAPERTURA</span><div className="vt-preopening-mark" aria-hidden="true">+</div><h3>Próxima edición en preparación.</h3><p>Las fechas, condiciones y enlaces de la siguiente experiencia todavía no están confirmados. El registro se abrirá cuando exista información verificable.</p><p className="vt-preopening-note">No mostraremos fechas, cupos ni condiciones hasta que estén configurados.</p></div>}</div></section>
 
         <section className="vt-faq vt-shell" aria-labelledby="vt-faq-title"><div className="vt-faq-heading"><p className="vt-eyebrow">Preguntas frecuentes</p><h2 id="vt-faq-title">Antes de participar,<br /><span>pregunta mejor.</span></h2></div><FAQ /></section>
-        <footer className="vt-footer"><div className="vt-shell vt-footer-grid"><div><Link className="vt-brand" href="#vt-top"><span className="vt-brand-mark">V</span><span>VETTA</span></Link><p>Una experiencia de Elite Focus.</p></div><div><p>Organiza Elite Focus · equipo vinculado a Zilis.</p><p><Link href="/privacidad">Aviso de privacidad pendiente</Link><span> · </span><Link href="/terminos">Términos pendientes</Link></p></div></div></footer>
+        <footer className="vt-footer"><div className="vt-shell vt-footer-grid"><div><Link className="vt-brand" href="#vt-top"><span className="vt-brand-mark">V</span><span>VETTA</span></Link><p>Una experiencia de Elite Focus.</p></div><div><p>Organiza Elite Focus · equipo vinculado a Zilis.</p><p><Link href="/privacidad">Aviso de privacidad (borrador)</Link><span> · </span><Link href="/terminos">Términos (borrador)</Link></p></div></div></footer>
       </div>
     </main>
   );
