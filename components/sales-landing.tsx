@@ -5,11 +5,16 @@ import { StickySalesCta } from "@/components/sticky-sales-cta";
 import type { PublicCohort } from "@/lib/config";
 
 const questions = [
-  ["Es un negocio con muchísimo potencial", "¿Qué evidencia real respalda ese potencial?"],
-  ["No necesitas invertir mucho", "¿Cuánto dinero requiere realmente comenzar y mantenerlo?"],
-  ["Puedes hacerlo crecer", "¿Cuánto dependerá de mi tiempo para conseguirlo?"],
+  ["Es una gran oportunidad", "¿Qué tendría que comprobar antes de decir que sí?"],
+  ["No necesitas invertir mucho", "¿Cuánto dinero requiere realmente comenzar y sostenerlo?"],
+  ["Tiene muchísimo potencial", "¿Qué evidencia real existe de que puede funcionar?"],
 ] as const;
-
+const benefits = [
+  ["MÁS CLARIDAD", "Para analizar una oportunidad antes de comprometerte."],
+  ["MEJORES PREGUNTAS", "Para identificar riesgos, vacíos de información y señales importantes."],
+  ["MÁS CRITERIO", "Para comparar alternativas sin dejarte llevar únicamente por la emoción."],
+  ["DECISIONES MÁS CONSCIENTES", "Para reconocer cuándo avanzar, cuándo investigar más y cuándo es mejor decir que no."],
+] as const;
 const criteria = [
   ["Capital necesario", "¿Qué debes comprometer antes de validar la oportunidad?"],
   ["Demanda verificable", "¿Qué evidencia existe de que alguien necesita o compra esto?"],
@@ -18,64 +23,44 @@ const criteria = [
 
 export function SalesLanding({ cohort }: { cohort: PublicCohort }) {
   const registrationOpen = cohort.status === "open";
-  const cta = (label: string, id?: string, className = "") => registrationOpen
-    ? <a id={id} className={`sales-button ${className}`} href="/registro">{label} <span aria-hidden="true">→</span></a>
-    : <span id={id} className={`sales-button sales-button-disabled ${className}`} role="status">Próxima edición en preparación.</span>;
+  const cta = (label: string, id?: string, className = "") => registrationOpen ? (
+    <a id={id} className={`sales-button ${className}`} href="/registro">{label} <span aria-hidden="true">→</span></a>
+  ) : null;
   return (
     <main className="sales-page">
       <EventBeacon name="landing_viewed" />
       <a className="sales-skip" href="#sales-main">Saltar al contenido</a>
-      <section className="sales-hero" id="sales-main">
-        <div className="sales-shell sales-hero-grid">
-          <div className="sales-hero-copy">
-            <p className="sales-eyebrow">MASTERCLASS EN VIVO · 2 ENCUENTROS</p>
-            <h1>NO EMPRENDAS <span>TODAVÍA.</span></h1>
-            <p className="sales-promise">Que un negocio suene increíble<span className="sales-mobile-break"><br /></span> no significa que sea una buena<span className="sales-mobile-break"><br /></span> decisión para ti.</p>
-            <div className="sales-hero-image sales-hero-image-mobile">
-              <Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(max-width: 700px) 100vw, 1px" />
-            </div>
-            <p className="sales-description">Aprende qué preguntar, qué comprobar<span className="sales-mobile-break"><br /></span> y cómo comparar oportunidades<span className="sales-mobile-break"><br /></span> antes de comprometer tu tiempo y tu dinero.</p>
-            <div className="sales-session-line" aria-label="Dos encuentros en vivo"><span>MARTES <b>·</b> Aprende a evaluar</span><span>JUEVES <b>·</b> Aprende a decidir</span></div>
-            {cta("QUIERO ASISTIR A LA MASTERCLASS", "sales-hero-cta")}
-            <p className="sales-gift-note"><span aria-hidden="true">✦</span> Y además, recibirás una herramienta práctica para evaluar tu próxima oportunidad antes de decir que sí.</p>
-            {!registrationOpen && <p className="sales-status">Próxima edición en preparación.</p>}
-          </div>
-          <div className="sales-hero-image sales-hero-image-desktop">
-            <Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(min-width: 900px) 48vw, 1px" />
-            <span className="sales-image-caption">Antes de decir sí, mira de nuevo.</span>
-          </div>
+      <section className="sales-hero" id="sales-main"><div className="sales-shell sales-hero-grid">
+        <div className="sales-hero-copy">
+          <h1>NO EMPRENDAS <span>TODAVÍA.</span></h1>
+          <p className="sales-promise">Que una oportunidad suene increíble no significa que sea una buena decisión para ti.</p>
+          <p className="sales-description">Aprende a identificar qué revisar antes de invertir tu tiempo, tu dinero y tu energía en un negocio.</p>
+          <p className="sales-date"><strong>Masterclass en vivo</strong><br />Martes 20 y jueves 22 · 8:00 p. m.</p>
+          {cta("QUIERO REGISTRARME", "sales-hero-cta")}
+          <p className="sales-gift-note"><span aria-hidden="true">✦</span> Y además recibirás un regalo especial para ayudarte a evaluar mejor cualquier oportunidad de negocio.</p>
+          <div className="sales-hero-image sales-hero-image-mobile"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(max-width: 700px) 100vw, 1px" /></div>
         </div>
-      </section>
+        <div className="sales-hero-image sales-hero-image-desktop"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(min-width: 900px) 48vw, 1px" /></div>
+      </div></section>
 
-      <section className="sales-identification" aria-labelledby="identification-title">
-        <div className="sales-shell">
-          <div className="sales-section-intro"><p className="sales-eyebrow">EL MOMENTO ANTES DE ELEGIR</p><h2 id="identification-title">¿Mientras más oportunidades conoces, más difícil te resulta elegir?</h2><p>Una franquicia. Un negocio digital. Una idea que alguien te recomienda.</p><p>Todas parecen interesantes cuando te cuentan sus ventajas.</p><p>Pero hay una diferencia enorme entre escuchar una buena propuesta y saber evaluarla.</p><p className="sales-intro-strong">Mira cómo cambia una oportunidad cuando empiezas a hacer las preguntas correctas.</p></div>
-          <div className="sales-question-list">{questions.map(([promise, question], index) => <article className="sales-question-pair" key={promise}><div><span className="sales-question-label">TE DICEN</span><p className="sales-promise-quote">“{promise}”.</p></div><span className="sales-question-connector" aria-hidden="true">→</span><div><span className="sales-question-label sales-question-label-dark">TÚ PREGUNTAS</span><p className="sales-smart-question">{question}</p></div><span className="sales-question-index">0{index + 1}</span></article>)}</div>
-          <p className="sales-identification-close">No se trata de encontrar más oportunidades. Se trata de saber cuáles merecen tu sí.</p>
-        </div>
-      </section>
+      <section className="sales-identification" aria-labelledby="identification-title"><div className="sales-shell">
+        <div className="sales-section-intro"><h2 id="identification-title">Has considerado distintas oportunidades… pero eso no significa que sea fácil elegir bien.</h2><p>Tal vez ya has pensado en una franquicia, un negocio digital, una tienda online o alguna otra oportunidad que parecía prometedora.</p><p>Y mientras más opciones aparecen, más difícil se vuelve tomar una decisión con seguridad.</p><p>Porque una cosa es escuchar una propuesta atractiva.</p><p className="sales-intro-strong">Y otra muy distinta es saber evaluarla de verdad.</p></div>
+        <div className="sales-question-list">{questions.map(([promise, question], index) => <article className="sales-question-pair" key={promise}><div><span className="sales-question-label">TE DICEN</span><p className="sales-promise-quote">«{promise}»</p></div><span className="sales-question-connector" aria-hidden="true">→</span><div><span className="sales-question-label sales-question-label-dark">TÚ TE PREGUNTAS</span><p className="sales-smart-question">{question}</p></div><span className="sales-question-index">0{index + 1}</span></article>)}</div>
+        <p className="sales-identification-close">No necesitas conocer más oportunidades. Necesitas aprender a distinguir cuáles merecen tu sí.</p>
+      </div></section>
 
-      <section className="sales-masterclass" aria-labelledby="masterclass-title">
-        <div className="sales-shell">
-          <div className="sales-section-intro sales-masterclass-intro"><p className="sales-eyebrow">LA EXPERIENCIA</p><h2 id="masterclass-title">La próxima vez que te presenten una oportunidad, no te quedes solo con lo que te cuentan.</h2><p>En dos encuentros en vivo aprenderás a mirar más allá de una buena presentación y tomar decisiones con más criterio.</p></div>
-          <div className="sales-timeline">
-            <div className="sales-timeline-progress" aria-hidden="true"><span>01</span><i></i><span>02</span></div>
-            <article className="sales-stage"><div className="sales-stage-meta">MARTES · PRIMER ENCUENTRO</div><h3>Aprende a evaluar.</h3><p>Descubre qué revisar detrás de una propuesta atractiva, qué preguntas hacer y cómo reconocer señales de riesgo antes de comprometerte.</p><strong>Dejarás de mirar únicamente las ventajas y empezarás a analizar lo que realmente importa.</strong></article>
-            <article className="sales-stage sales-stage-second"><div className="sales-stage-meta">JUEVES · SEGUNDO ENCUENTRO</div><h3>Aprende a decidir.</h3><p>Lleva esos criterios a oportunidades concretas, aprende a comparar alternativas y reconoce cuándo avanzar, cuándo investigar más y cuándo decir que no.</p><strong>Tendrás una forma más clara de evaluar qué oportunidad merece tu siguiente paso.</strong></article>
-          </div>
-          <div className="sales-reinforcement"><span aria-hidden="true">✦</span><p>No necesitas tener experiencia emprendiendo ni haber elegido ya un negocio.</p></div>
-          {cta("QUIERO ASISTIR A LA MASTERCLASS", undefined, "sales-button-secondary")}
-        </div>
-      </section>
+      <section className="sales-masterclass" aria-labelledby="masterclass-title"><div className="sales-shell">
+        <div className="sales-section-intro sales-masterclass-intro"><h2 id="masterclass-title">Esta masterclass te ayudará a pensar diferente antes de tomar una decisión importante.</h2><p>En lugar de dejarte llevar solo por una buena presentación, aprenderás a mirar con más criterio lo que realmente hay detrás de una oportunidad.</p></div>
+        <div className="sales-benefit-grid">{benefits.map(([title, text], index) => <article className="sales-benefit" key={title}><span className="sales-benefit-index">0{index + 1}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
+        <p className="sales-reinforcement">Porque antes de emprender, lo importante no es emocionarte más. Es aprender a decidir mejor.</p>
+        {cta("QUIERO REGISTRARME", undefined, "sales-button-secondary")}
+      </div></section>
 
-      <section className="sales-gift" aria-labelledby="gift-title">
-        <div className="sales-shell sales-gift-grid">
-          <div className="sales-gift-copy"><p className="sales-gift-eyebrow">Y ADEMÁS, TE LLEVAS ESTE REGALO.</p><h2 id="gift-title">EL FILTRO<br />ANTES DEL SÍ.</h2><p className="sales-gift-promise">Que la próxima oportunidad no te encuentre sin las preguntas correctas.</p><p>Recibirás nuestra Matriz para Evaluar Oportunidades, una herramienta práctica que podrás utilizar cada vez que estés considerando un negocio.</p><ul><li>Identifica qué información necesitas comprobar antes de comprometerte.</li><li>Compara diferentes oportunidades con criterios claros.</li><li>Reconoce preguntas y riesgos que merecen una revisión más profunda.</li></ul><p className="sales-gift-close">La masterclass te enseña a evaluar. Tu regalo te ayuda a seguir haciéndolo después.</p></div>
-          <div className="sales-device-wrap"><Image src="/images/filtro-antes-del-si-device.png" alt="Tablet con la Matriz para Evaluar Oportunidades" fill sizes="(max-width: 700px) 100vw, 48vw" /><div className="sales-matrix-screen"><div className="sales-matrix-screen-head"><span>MATRIZ PARA EVALUAR OPORTUNIDADES</span><b>01 / 10</b></div>{criteria.map(([title, question]) => <div className="sales-matrix-row" key={title}><strong>{title}</strong><span>{question}</span></div>)}</div></div>
-          <div className="sales-gift-cta"><h3>Tu próxima oportunidad merece algo más que una buena presentación.</h3><p>Reserva tu acceso a los dos encuentros y recibe la herramienta que te ayudará a evaluar con más criterio.</p>{cta("QUIERO ASISTIR Y RECIBIR MI REGALO", "sales-final-cta", "sales-button-gold")}<small>Recibirás la herramienta por WhatsApp después de confirmar tu ingreso al grupo privado.</small></div>
-        </div>
-      </section>
-
+      <section className="sales-gift" aria-labelledby="gift-title"><div className="sales-shell sales-gift-grid">
+        <div className="sales-gift-copy"><h2 id="gift-title">Además, al registrarte recibirás un regalo que te ayudará a llevar todo esto a la práctica.</h2><p className="sales-gift-name">EL FILTRO ANTES DEL SÍ.</p><p>Una herramienta práctica para ayudarte a evaluar oportunidades de negocio antes de comprometerte con ellas.</p><ul><li>Ordenar mejor tus ideas.</li><li>Analizar una oportunidad con más criterio.</li><li>Detectar lo que todavía necesitas investigar.</li><li>Comparar alternativas con una perspectiva más clara.</li></ul><p className="sales-gift-close">No es solo información. Es una herramienta para ayudarte a pensar mejor antes de decidir.</p></div>
+        <div className="sales-device-wrap"><Image src="/images/filtro-antes-del-si-device.png" alt="Tablet con la Matriz para Evaluar Oportunidades" fill sizes="(max-width: 700px) 100vw, 48vw" /><div className="sales-matrix-screen"><div className="sales-matrix-screen-head"><span>MATRIZ PARA EVALUAR OPORTUNIDADES</span><b>01 / 10</b></div>{criteria.map(([title, question]) => <div className="sales-matrix-row" key={title}><strong>{title}</strong><span>{question}</span></div>)}</div></div>
+        <div className="sales-gift-cta"><h3>Tu próxima decisión merece algo más que entusiasmo.</h3><p>Regístrate en la masterclass y aprende a evaluar oportunidades con más criterio antes de decir que sí.</p><p className="sales-date sales-date-dark">Martes 20 y jueves 22 · 8:00 p. m.</p>{cta("QUIERO MI LUGAR Y MI REGALO", "sales-final-cta", "sales-button-gold")}<small>Recibirás tu regalo por WhatsApp después de completar el registro, ingresar al grupo privado y confirmar tu ingreso.</small></div>
+      </div></section>
       <footer className="sales-footer"><div className="sales-shell"><div><span className="sales-footer-title">NO EMPRENDAS TODAVÍA.</span><span>Masterclass en vivo · dos encuentros</span></div><nav aria-label="Enlaces legales"><Link href="/privacidad">Aviso de privacidad (borrador)</Link><Link href="/terminos">Términos (borrador)</Link></nav></div></footer>
       <StickySalesCta enabled={registrationOpen} />
     </main>

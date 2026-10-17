@@ -98,7 +98,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         <div className="field-row"><div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" required placeholder="Tu ciudad…" /></div><div className="field"><label htmlFor="country">País</label><select id="country" name="country" defaultValue="CO" required>{countries.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div></div>
         <label className="consent"><input type="checkbox" name="consent" required /><span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso de privacidad</a>.</span></label>
         {state === "error" && <p className="form-error" role="alert">{result && !result.ok ? result.message : "Revisa los campos y vuelve a intentarlo."}</p>}
-        <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Recibiendo tu registro…" : "Reservar mi lugar"}<span aria-hidden="true">↗</span></button>
+        <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Guardando tu registro…" : "CONFIRMAR MI REGISTRO"}<span aria-hidden="true">↗</span></button>
         <p className="form-footnote">La participación no implica comprar productos ni incorporarte a un negocio.</p>
       </div>
     </form>

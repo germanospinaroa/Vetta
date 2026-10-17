@@ -22,7 +22,7 @@ export function StickySalesCta({ enabled }: { enabled: boolean }) {
   return (
     <div className={`sales-sticky-cta${visible ? " is-visible" : ""}`} aria-hidden={!visible}>
       <a href="/registro" tabIndex={visible ? 0 : -1}>
-        QUIERO ASISTIR A LA MASTERCLASS <span aria-hidden="true">→</span>
+        QUIERO REGISTRARME <span aria-hidden="true">→</span>
       </a>
     </div>
   );
