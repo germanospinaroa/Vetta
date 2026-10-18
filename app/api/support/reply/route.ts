@@ -10,7 +10,7 @@ const replySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const admin = await getAuthorizedAdmin();
+  const admin = await getAuthorizedAdmin("admin");
   if (!admin) return NextResponse.json({ ok: false, code: "unauthorized" }, { status: 401 });
   const key = process.env.RESEND_API_KEY;
   if (!key) return NextResponse.json({ ok: false, code: "support_email_not_configured" }, { status: 503 });

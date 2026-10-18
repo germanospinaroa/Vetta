@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function getAuthorizedAdmin() {
+export type AdminRole = "operator" | "admin";
+
+export async function getAuthorizedAdmin(requiredRole?: AdminRole) {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
   const { data, error } = await supabase.auth.getUser();
@@ -10,5 +12,7 @@ export async function getAuthorizedAdmin() {
     .select("role")
     .eq("user_id", data.user.id)
     .maybeSingle();
-  return memberError || !member ? null : data.user;
+  if (memberError || !member) return null;
+  if (requiredRole && member.role !== requiredRole) return null;
+  return data.user;
 }
