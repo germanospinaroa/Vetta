@@ -4,6 +4,7 @@ import { saveDemoLead } from "@/lib/demo-store";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { persistRegistration } from "@/lib/persistence";
 import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
+import { createConfirmationToken } from "@/lib/confirmation";
 
 export async function POST(request: Request) {
   try {
@@ -23,14 +24,19 @@ export async function POST(request: Request) {
     catch { return NextResponse.json({ ok: false, code: "invalid_phone", message: "Escribe un número de WhatsApp válido para el país seleccionado." }, { status: 400 }); }
     let lead;
     try { lead = config.demoMode ? saveDemoLead(parsed.data, normalizedPhone, config.cohort.id) : await persistRegistration(parsed.data, normalizedPhone); }
-    catch { return NextResponse.json({ ok: false, code: "persistence_error", message: "No pudimos guardar tu registro. Inténtalo de nuevo." }, { status: 503 }); }
+    catch (error) {
+      if (error instanceof Error && error.message === "duplicate_registration") return NextResponse.json({ ok: false, code: "duplicate_registration", message: "Ya existe un registro con este WhatsApp para esta cohorte." }, { status: 409 });
+      return NextResponse.json({ ok: false, code: "persistence_error", message: "No pudimos guardar tu registro. Inténtalo de nuevo." }, { status: 503 });
+    }
     if (!lead) return NextResponse.json({ ok: false, code: "persistence_not_configured", message: "El registro está pendiente de configuración operativa." }, { status: 503 });
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       registrationCode: lead.registrationCode,
       whatsappHref: buildWhatsAppHref(config.whatsappNumber, lead.name, lead.registrationCode),
       mode: config.demoMode ? "TEST" : "LIVE",
     });
+    if (!config.demoMode) response.cookies.set("vetta_registration_confirmation", createConfirmationToken(lead.registrationCode, config.cohort.id), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/confirmacion", maxAge: 1800 });
+    return response;
   } catch {
     return NextResponse.json({ ok: false, code: "server_error", message: "No pudimos recibir el registro. Inténtalo de nuevo." }, { status: 500 });
   }

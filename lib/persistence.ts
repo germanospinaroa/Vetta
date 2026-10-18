@@ -7,6 +7,9 @@ export async function persistRegistration(input: RegistrationInput, normalizedPh
   const client = createSupabaseAdminClient();
   if (!client) return null;
   const cohort = getPublicConfig().cohort;
+  const { data: existing, error: existingError } = await client.from("leads").select("id").eq("cohort_id", cohort.id).eq("whatsapp_e164", normalizedPhone).maybeSingle();
+  if (existingError) throw new Error("registration_duplicate_check_failed");
+  if (existing) throw new Error("duplicate_registration");
   const { data: lead, error } = await client.from("leads").insert({
     cohort_id: cohort.id,
     registration_code: `VETTA-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
@@ -25,9 +28,23 @@ export async function persistRegistration(input: RegistrationInput, normalizedPh
   return { registrationCode: lead.registration_code, name: lead.name };
 }
 
+export async function findPersistedRegistration(registrationCode: string, cohortId: string) {
+  const client = createSupabaseAdminClient();
+  if (!client) return null;
+  const { data, error } = await client.from("leads").select("registration_code, name, cohort_id").eq("registration_code", registrationCode).eq("cohort_id", cohortId).maybeSingle();
+  if (error || !data) return null;
+  return { registrationCode: data.registration_code, name: data.name };
+}
+
 export async function persistPublicEvent(event: { name: string; registrationCode?: string; cohortId?: string; properties?: Record<string, string | number | boolean> }) {
   const client = createSupabaseAdminClient();
   if (!client) return false;
-  const { error } = await client.from("lead_events").insert({ name: event.name, cohort_id: event.cohortId || getPublicConfig().cohort.id, properties: event.properties || {} });
+  let leadId: string | undefined;
+  if (event.registrationCode) {
+    const { data: lead, error: leadError } = await client.from("leads").select("id").eq("registration_code", event.registrationCode).eq("cohort_id", event.cohortId || getPublicConfig().cohort.id).maybeSingle();
+    if (leadError || !lead) return false;
+    leadId = lead.id;
+  }
+  const { error } = await client.from("lead_events").insert({ lead_id: leadId, name: event.name, cohort_id: event.cohortId || getPublicConfig().cohort.id, properties: event.properties || {} });
   return !error;
 }

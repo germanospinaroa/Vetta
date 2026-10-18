@@ -56,8 +56,6 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         return;
       }
       if (redirectOnSuccess) {
-        window.sessionStorage.setItem("vetta-registration-confirmed-v1", data.registrationCode);
-        window.sessionStorage.setItem("vetta-registration-name-v1", String(payload.name || ""));
         router.push(`/confirmacion?code=${encodeURIComponent(data.registrationCode)}` as never);
         return;
       }

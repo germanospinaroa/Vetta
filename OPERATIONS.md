@@ -2,15 +2,15 @@
 
 ## Human WhatsApp flow
 
-1. Operator locates the registration by code.
-2. Operator opens the configured official WhatsApp link.
+1. The confirmation page opens a 1:1 `wa.me` link containing the prospect's first name and unique registration code.
+2. Operator locates and verifies the registration in the authenticated panel by code or phone.
 3. Operator copies the initial response and group link.
 4. Operator records conversation started only when evidence exists.
 5. Operator records group join declared only after the person replies `LISTO`.
 6. Operator sends the matrix directly in the 1:1 conversation and records `matrix_sent`.
 7. Operator records attendance and commercial outcomes manually.
 
-The application never claims a conversation, group membership, matrix delivery, attendance, or conversion from a click alone.
+The application never claims a conversation, group membership, matrix delivery, attendance, or conversion from a click alone. Evolution API is not considered integrated until an authorized inbound test links a message from the official instance to the matching VETTA lead.
 
 ## Configurable values
 
