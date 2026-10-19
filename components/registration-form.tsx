@@ -7,7 +7,10 @@ import { readAttribution } from "@/lib/tracking";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
-const countries = getCountries().map((code) => [code, `${code} (+${getCountryCallingCode(code)})`] as const);
+const regionNames = new Intl.DisplayNames(["es"], { type: "region" });
+const countries = getCountries()
+  .map((code) => [code, regionNames.of(code) || code] as const)
+  .sort((a, b) => a[1].localeCompare(b[1], "es"));
 
 type Result = { ok: true; registrationCode: string; whatsappHref?: string; mode: "TEST" | "LIVE" } | { ok: false; message: string };
 
