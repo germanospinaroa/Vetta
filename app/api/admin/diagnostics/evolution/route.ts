@@ -53,18 +53,31 @@ export async function POST(request: Request) {
   const apiKey = process.env.EVOLUTION_API_KEY?.trim();
   if (!evolutionUrl || !apiKey) return NextResponse.json({ ok: false, code: "evolution_runtime_config_unavailable" }, { status: 503 });
 
-  const remoteJid = `${lead.whatsapp_e164.replace(/\D/g, "")}@s.whatsapp.net`;
-  const response = await fetch(`${evolutionUrl}/chat/findMessages/${encodeURIComponent(instance)}`, {
-    method: "POST",
-    headers: { apikey: apiKey, "content-type": "application/json" },
-    body: JSON.stringify({ where: { key: { remoteJid } } }),
-    cache: "no-store",
-  });
-  const raw = await response.text();
+  const digits = lead.whatsapp_e164.replace(/\D/g, "");
+  const remoteJids = [`${digits}@s.whatsapp.net`, `${digits}@c.us`, digits];
+  let responseStatus = 0;
+  let responseShape: string[] = [];
   let body: unknown = null;
-  try { body = JSON.parse(raw); } catch { /* diagnostic response may not be JSON */ }
-  if (!response.ok) return NextResponse.json({ ok: false, code: "evolution_query_failed", status: response.status }, { status: 502 });
-  const messages = messageList(body);
+  let matchedJidType: string | null = null;
+  let messages: unknown[] = [];
+  for (const remoteJid of remoteJids) {
+    const response = await fetch(`${evolutionUrl}/chat/findMessages/${encodeURIComponent(instance)}`, {
+      method: "POST",
+      headers: { apikey: apiKey, "content-type": "application/json" },
+      body: JSON.stringify({ where: { key: { remoteJid } } }),
+      cache: "no-store",
+    });
+    responseStatus = response.status;
+    const raw = await response.text();
+    try { body = JSON.parse(raw); } catch { body = null; }
+    responseShape = Array.isArray(body) ? ["array"] : body && typeof body === "object" ? Object.keys(body).slice(0, 8) : [typeof body];
+    if (!response.ok) return NextResponse.json({ ok: false, code: "evolution_query_failed", status: response.status }, { status: 502 });
+    messages = messageList(body);
+    if (messages.length) {
+      matchedJidType = remoteJid.endsWith("@s.whatsapp.net") ? "phone" : remoteJid.endsWith("@c.us") ? "c_us" : "bare";
+      break;
+    }
+  }
   const parsedBody = await request.json().catch(() => ({})) as { action?: string };
   let reprocessed = 0;
   if (parsedBody.action === "reprocess") {
@@ -78,5 +91,5 @@ export async function POST(request: Request) {
   }
   const { data: inbound } = await client.from("whatsapp_inbound_messages").select("id,action,error_code,provider_message_id,processed_at").eq("lead_id", lead.id).order("processed_at", { ascending: false }).limit(10);
   const { data: outbound } = await client.from("whatsapp_outbound_messages").select("kind,status,error_code,provider_message_id,sent_at").eq("lead_id", lead.id).order("sent_at", { ascending: false }).limit(10);
-  return NextResponse.json({ ok: true, lead: { idSuffix: String(lead.id).slice(-8), firstName: String(lead.name).trim().split(/\s+/)[0], phoneSuffix: String(lead.whatsapp_e164).slice(-4) }, status: response.status, messageCount: messages.length, messages: messages.map(shapeMessage), reprocessed, persisted: { inbound: inbound || [], outbound: outbound || [] } });
+  return NextResponse.json({ ok: true, lead: { idSuffix: String(lead.id).slice(-8), firstName: String(lead.name).trim().split(/\s+/)[0], phoneSuffix: String(lead.whatsapp_e164).slice(-4) }, status: responseStatus, responseShape, matchedJidType, messageCount: messages.length, messages: messages.map(shapeMessage), reprocessed, persisted: { inbound: inbound || [], outbound: outbound || [] } });
 }
