@@ -3,6 +3,7 @@ import Link from "next/link";
 import { EventBeacon } from "@/components/event-beacon";
 import { StickySalesCta } from "@/components/sticky-sales-cta";
 import { SalesCta } from "@/components/sales-cta";
+import { PrivacyPreferencesButton } from "@/components/privacy-preferences-button";
 import type { PublicCohort } from "@/lib/config";
 import teamImage from "../Team.png";
 
@@ -30,7 +31,7 @@ export function SalesLanding({ cohort }: { cohort: PublicCohort }) {
 
       <section className="sales-v2-facilitators" aria-labelledby="sales-v2-facilitators-title"><div className="sales-shell"><div className="sales-v2-section-heading"><h2 id="sales-v2-facilitators-title">CUATRO VOCES. MÁS POSIBILIDADES.</h2></div><div className="sales-v2-team-image"><Image src={teamImage} alt="Composición visual de Andrés Jaramillo, Marcela Cruz, Alejandra Arévalo y Germán Ospina" sizes="(max-width: 700px) 100vw, 980px" /></div><p className="sales-v2-team-copy">Cuatro perspectivas para compartir experiencias, cuestionar lo que damos por hecho y descubrir nuevas formas de mirar el emprendimiento.</p><p className="sales-v2-team-names">Andrés Jaramillo · Marcela Cruz · Alejandra Arévalo · Germán Ospina</p><div className="sales-v2-close sales-v2-inline-close"><h3>Hay posibilidades que vale la pena conocer antes de elegir.</h3><p>Te esperamos en los dos encuentros.</p>{canRegister && cta("QUIERO RESERVAR MI LUGAR", "sales-final-cta")}</div></div></section>
 
-      <footer className="sales-footer sales-v2-footer"><div className="sales-shell"><div><span className="sales-footer-title">NO EMPRENDAS TODAVÍA.</span><span>Dos encuentros en vivo</span></div><nav aria-label="Enlaces legales"><Link href="/privacidad">Aviso de privacidad (borrador)</Link><Link href="/terminos">Términos (borrador)</Link></nav></div></footer><StickySalesCta enabled={canRegister} />
+      <footer className="sales-footer sales-v2-footer"><div className="sales-shell"><div><span className="sales-footer-title">NO EMPRENDAS TODAVÍA.</span><span>Dos encuentros en vivo</span></div><nav aria-label="Enlaces legales"><Link href="/privacidad">Aviso de privacidad (propuesta)</Link><Link href="/terminos">Términos (borrador)</Link><PrivacyPreferencesButton /></nav></div></footer><StickySalesCta enabled={canRegister} />
     </main>
   );
 }

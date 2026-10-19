@@ -2,6 +2,7 @@ import { getPublicConfig } from "@/lib/config";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { territoryFromCampaign } from "@/lib/tracking";
 import type { RegistrationInput } from "@/lib/validation";
+import { isDuplicateRegistrationConstraint } from "@/lib/registration-dedupe";
 
 export async function persistRegistration(input: RegistrationInput, normalizedPhone: string, options: { qa?: boolean } = {}) {
   const client = createSupabaseAdminClient();
@@ -18,7 +19,11 @@ export async function persistRegistration(input: RegistrationInput, normalizedPh
     city: input.city,
     country_code: input.country,
   }).select("id, registration_code, name").single();
-  if (error || !lead) throw new Error("registration_persistence_failed");
+  if (error) {
+    if (isDuplicateRegistrationConstraint(error)) throw new Error("duplicate_registration");
+    throw new Error("registration_persistence_failed");
+  }
+  if (!lead) throw new Error("registration_persistence_failed");
   const { error: attributionError } = await client.from("campaign_attribution").insert({ lead_id: lead.id, utm_source: input.utm_source || null, utm_medium: input.utm_medium || null, utm_campaign: input.utm_campaign || null, utm_content: input.utm_content || null, utm_term: input.utm_term || null, territory: territoryFromCampaign(input.utm_campaign) });
   if (attributionError) throw new Error("attribution_persistence_failed");
   const consentRows = [{ lead_id: lead.id, consent_version: input.consentVersion, consent_type: options.qa ? "experience_communications_qa" : "experience_communications" }];

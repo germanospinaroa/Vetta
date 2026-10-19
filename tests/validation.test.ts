@@ -2,13 +2,60 @@ import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
-import { CLARITY_EVENTS } from "../lib/analytics";
+import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, isConfirmedNewRegistration, shouldTrackPageView, trackNewMetaLead } from "../lib/analytics";
+import { isDuplicateRegistrationConstraint } from "../lib/registration-dedupe";
 import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
 import { defaultAnswers, diagnoseExploration, diagnoseOpportunity } from "../lib/matrix-diagnostic";
 
 describe("VETTA registration contract", () => {
+  function mockStorage(initial: Record<string, string> = {}) {
+    const values = new Map(Object.entries(initial));
+    return { getItem: (key: string) => values.get(key) || null, setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key), clear: () => values.clear() } as unknown as Storage;
+  }
+
   it("keeps analytics interaction events free of diagnostic answers", () => {
     expect(CLARITY_EVENTS).toEqual(["cta_clicked", "registration_started", "registration_error", "registration_confirmed", "whatsapp_clicked", "matrix_started", "matrix_completed"]);
+  });
+
+  it("only treats an explicit persisted LIVE response as a new registration", () => {
+    expect(isConfirmedNewRegistration({ ok: true, newRegistration: true, existing: false, mode: "LIVE", registrationCode: "VETTA-NEW" })).toBe(true);
+    expect(isConfirmedNewRegistration({ ok: true, newRegistration: false, existing: true, mode: "LIVE", registrationCode: "VETTA-OLD" })).toBe(false);
+    expect(isConfirmedNewRegistration({ ok: true, mode: "LIVE", registrationCode: "VETTA-MISSING-FLAG" })).toBe(false);
+    expect(isConfirmedNewRegistration({ ok: true, newRegistration: true, mode: "TEST", registrationCode: "VETTA-TEST" })).toBe(false);
+  });
+
+  it("deduplicates PageView by navigation path", () => {
+    expect(shouldTrackPageView("/", "")).toBe(true);
+    expect(shouldTrackPageView("/", "/")).toBe(false);
+    expect(shouldTrackPageView("/matriz", "/")).toBe(true);
+  });
+
+  it("translates only the cohort-phone unique conflict into an existing registration", () => {
+    expect(isDuplicateRegistrationConstraint({ code: "23505", message: "duplicate key violates unique constraint leads_cohort_whatsapp_unique_idx" })).toBe(true);
+    expect(isDuplicateRegistrationConstraint({ code: "23505", message: "duplicate key violates unique constraint leads_registration_code_key" })).toBe(false);
+    expect(isDuplicateRegistrationConstraint({ code: "23503", message: "foreign key violation" })).toBe(false);
+  });
+
+  it("sends one mocked Meta Lead only with advertising consent", () => {
+    const previousWindow = globalThis.window;
+    const calls: unknown[][] = [];
+    Object.defineProperty(globalThis, "window", { configurable: true, value: { localStorage: mockStorage({ [ADVERTISING_CONSENT_KEY]: "granted" }), sessionStorage: mockStorage(), fbq: (...args: unknown[]) => calls.push(args) } });
+    expect(advertisingConsentGranted()).toBe(true);
+    expect(trackNewMetaLead("VETTA-MOCK-1")).toBe(true);
+    expect(trackNewMetaLead("VETTA-MOCK-1")).toBe(false);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.[1]).toBe("Lead");
+    Object.defineProperty(globalThis, "window", { configurable: true, value: previousWindow });
+  });
+
+  it("does not send Meta Lead when advertising consent is denied", () => {
+    const previousWindow = globalThis.window;
+    const calls: unknown[][] = [];
+    Object.defineProperty(globalThis, "window", { configurable: true, value: { localStorage: mockStorage({ [ADVERTISING_CONSENT_KEY]: "denied" }), sessionStorage: mockStorage(), fbq: (...args: unknown[]) => calls.push(args) } });
+    expect(advertisingConsentGranted()).toBe(false);
+    expect(trackNewMetaLead("VETTA-MOCK-2")).toBe(false);
+    expect(calls).toHaveLength(0);
+    Object.defineProperty(globalThis, "window", { configurable: true, value: previousWindow });
   });
   it("normalizes an international WhatsApp number to E.164", () => {
     expect(normalizeWhatsApp("300 123 4567", "CO")).toBe("+573001234567");

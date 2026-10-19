@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCountries, getCountryCallingCode } from "libphonenumber-js";
 import { readAttribution } from "@/lib/tracking";
-import { queueMetaLeadUntilConsent, trackClarityEvent, trackNewMetaLead } from "@/lib/analytics";
+import { isConfirmedNewRegistration, queueMetaLeadUntilConsent, trackClarityEvent, trackNewMetaLead } from "@/lib/analytics";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
@@ -62,8 +62,9 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: data.ok ? "unknown" : data.code || "request_failed" } }) });
         return;
       }
-      if (data.newRegistration === true && data.registrationCode && data.mode === "LIVE") {
-        if (!trackNewMetaLead(data.registrationCode)) queueMetaLeadUntilConsent(data.registrationCode);
+      if (isConfirmedNewRegistration(data)) {
+        const registrationCode = data.registrationCode as string;
+        if (!trackNewMetaLead(registrationCode)) queueMetaLeadUntilConsent(registrationCode);
         trackClarityEvent("registration_confirmed");
       }
       if (redirectOnSuccess && !data.existing && data.registrationCode) {
