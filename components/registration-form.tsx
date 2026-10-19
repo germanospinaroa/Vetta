@@ -1,8 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getCountries, getCountryCallingCode } from "libphonenumber-js";
 import { readAttribution } from "@/lib/tracking";
+import { queueMetaLeadUntilConsent, trackClarityEvent, trackNewMetaLead } from "@/lib/analytics";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
@@ -11,9 +13,10 @@ const countries = getCountries()
   .map((code) => [code, regionNames.of(code) || code] as const)
   .sort((a, b) => a[1].localeCompare(b[1], "es"));
 
-type Result = { ok: true; registrationCode?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean; firstName?: string } | { ok: false; message: string };
+type Result = { ok: true; registrationCode?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean; newRegistration?: boolean; firstName?: string } | { ok: false; message: string };
 
 export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSuccess?: boolean }) {
+  const router = useRouter();
   const [state, setState] = useState<FormState>("idle");
   const [result, setResult] = useState<Result | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -28,6 +31,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
   function markStarted() {
     if (started.current) return;
     started.current = true;
+    trackClarityEvent("registration_started");
     void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_started" }) });
   }
 
@@ -53,14 +57,19 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
       const data = (await response.json()) as Result & { code?: string };
       if (!response.ok || !data.ok) {
         setState("error");
+        trackClarityEvent("registration_error");
         setResult({ ok: false, message: data.ok ? "No pudimos completar el registro." : data.message });
         void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: data.ok ? "unknown" : data.code || "request_failed" } }) });
         return;
       }
+      if (data.newRegistration === true && data.registrationCode && data.mode === "LIVE") {
+        if (!trackNewMetaLead(data.registrationCode)) queueMetaLeadUntilConsent(data.registrationCode);
+        trackClarityEvent("registration_confirmed");
+      }
       if (redirectOnSuccess && !data.existing && data.registrationCode) {
-        // Use a document navigation so the HttpOnly confirmation cookie, scoped
-        // to /confirmacion, is included in the first server-rendered request.
-        window.location.assign(`/confirmacion?code=${encodeURIComponent(data.registrationCode)}`);
+        // The HttpOnly confirmation cookie is scoped to /confirmacion and is
+        // included in the server-rendered confirmation request.
+        router.push(`/confirmacion?code=${encodeURIComponent(data.registrationCode)}`);
         return;
       }
       setState("success");
@@ -68,6 +77,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
       setResult({ ...data, firstName: submittedName });
     } catch {
       setState("error");
+      trackClarityEvent("registration_error");
       setResult({ ok: false, message: "No pudimos conectar con el registro. Revisa tu conexión e inténtalo de nuevo." });
       void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: "network_error" } }) });
     }
@@ -83,7 +93,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         <p>Pulsa el botón, envíanos el mensaje por WhatsApp y te compartiremos el enlace para unirte.</p>
         {result.registrationCode && <div className="registration-code"><span>Código</span><strong>{result.registrationCode}</strong></div>}
         {result.whatsappHref ? (
-          <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => { const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
+          <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => { trackClarityEvent("whatsapp_clicked"); const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
             CONTINUAR POR WHATSAPP <span aria-hidden="true">↗</span>
           </a>
         ) : (
@@ -96,7 +106,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
   }
 
   return (
-    <form id="demo-form" className="registration-form" onSubmit={submit} onFocus={markStarted}>
+    <form id="demo-form" className="registration-form" data-clarity-mask="true" onSubmit={submit} onFocus={markStarted}>
       <div className="form-fields">
         <div className="field"><label htmlFor="country">País</label><select id="country" name="country" value={country} onChange={(event) => setCountry(event.target.value)} required>{countries.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div>
         <div className="field"><label htmlFor="name">Nombre</label><input id="name" name="name" autoComplete="name" required placeholder="Tu nombre" /></div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackClarityEvent } from "@/lib/analytics";
 
 export function StickySalesCta({ enabled }: { enabled: boolean }) {
   const [visible, setVisible] = useState(false);
@@ -21,7 +22,7 @@ export function StickySalesCta({ enabled }: { enabled: boolean }) {
   if (!enabled) return null;
   return (
     <div className={`sales-sticky-cta${visible ? " is-visible" : ""}`} aria-hidden={!visible}>
-      <a href="/registro" tabIndex={visible ? 0 : -1}>
+      <a href="/registro" tabIndex={visible ? 0 : -1} onClick={() => trackClarityEvent("cta_clicked")}>
         QUIERO RESERVAR MI LUGAR <span aria-hidden="true">→</span>
       </a>
     </div>

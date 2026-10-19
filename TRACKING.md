@@ -19,4 +19,10 @@
 
 Persist only the supported UTMs: `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`. Preserve the three territories: `no_emprendas_todavia`, `tu_proximo_movimiento`, `estas_saturado`.
 
-No ad pixels or external analytics are enabled in this build.
+## Consent-managed external measurement
+
+Meta Pixel (`3337529346452736`) and Microsoft Clarity (`z0c14ujntu`) are loaded only after separate optional consent decisions. Meta uses the advertising/conversion preference; Clarity uses the analytics preference. Rejecting either preference does not block registration.
+
+Meta `Lead` is sent client-side only after the server response explicitly reports `newRegistration: true`, `mode: "LIVE"`, and a persisted registration code. The database also enforces one lead per `(cohort_id, whatsapp_e164)`. No Conversions API is enabled.
+
+Clarity receives allowlisted interaction names only. Registration, confirmation, matrix, admin, and other personal-data surfaces are masked; matrix answers remain local-first and are never sent as event properties.

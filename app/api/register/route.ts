@@ -29,13 +29,15 @@ export async function POST(request: Request) {
     try { lead = config.demoMode ? saveDemoLead(parsed.data, normalizedPhone, config.cohort.id) : await persistRegistration(parsed.data, normalizedPhone, { qa }); }
     catch (error) {
       if (error instanceof Error && error.message === "duplicate_registration") {
-        return NextResponse.json({ ok: true, existing: true, mode: config.demoMode ? "TEST" : "LIVE", whatsappHref: buildGenericWhatsAppHref(config.whatsappNumber) });
+        return NextResponse.json({ ok: true, existing: true, newRegistration: false, mode: config.demoMode ? "TEST" : "LIVE", whatsappHref: buildGenericWhatsAppHref(config.whatsappNumber) });
       }
       return NextResponse.json({ ok: false, code: "persistence_error", message: "No pudimos guardar tu registro. Inténtalo de nuevo." }, { status: 503 });
     }
     if (!lead) return NextResponse.json({ ok: false, code: "persistence_not_configured", message: "El registro está pendiente de configuración operativa." }, { status: 503 });
     const response = NextResponse.json({
       ok: true,
+      existing: false,
+      newRegistration: true,
       registrationCode: lead.registrationCode,
       whatsappHref: buildWhatsAppHref(config.whatsappNumber, lead.name, lead.registrationCode),
       mode: config.demoMode ? "TEST" : "LIVE",

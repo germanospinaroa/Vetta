@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
+import { CLARITY_EVENTS } from "../lib/analytics";
 import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
 import { defaultAnswers, diagnoseExploration, diagnoseOpportunity } from "../lib/matrix-diagnostic";
 
 describe("VETTA registration contract", () => {
+  it("keeps analytics interaction events free of diagnostic answers", () => {
+    expect(CLARITY_EVENTS).toEqual(["cta_clicked", "registration_started", "registration_error", "registration_confirmed", "whatsapp_clicked", "matrix_started", "matrix_completed"]);
+  });
   it("normalizes an international WhatsApp number to E.164", () => {
     expect(normalizeWhatsApp("300 123 4567", "CO")).toBe("+573001234567");
   });
