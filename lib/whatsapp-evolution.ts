@@ -68,20 +68,44 @@ export async function processEvolutionMessage(payload: unknown) {
     return { action: verified ? "group_join_verified" as const : "group_event_unmatched" as const };
   }
   const message = extractEvolutionMessage(payload);
-  if (message.fromMe || message.eventName !== "messages.upsert") return { action: "ignored" as const };
+  if (message.eventName !== "messages.upsert") {
+    console.info("evolution_message_ignored", { reason: "unsupported_event", eventName: message.eventName });
+    return { action: "ignored" as const, reason: "unsupported_event" as const };
+  }
+  if (message.fromMe) {
+    console.info("evolution_message_ignored", { reason: "from_me", hasProviderId: Boolean(message.providerMessageId) });
+    return { action: "ignored" as const, reason: "from_me" as const };
+  }
   if (!message.senderE164 || !message.text) {
+    const invalidAction = "ignored_invalid_message";
+    const invalidError = !message.senderE164 ? "sender_not_resolved" : "text_not_resolved";
+    const { error: invalidInsertError } = await client.from("whatsapp_inbound_messages").upsert({
+      provider_message_id: message.providerMessageId,
+      instance_name: INSTANCE,
+      sender_jid: message.senderJid,
+      sender_e164: message.senderE164,
+      lead_id: null,
+      event_name: message.eventName,
+      message_kind: "text",
+      message_hash: message.text ? createHash("sha256").update(message.text).digest("hex") : null,
+      action: invalidAction,
+      error_code: invalidError,
+      processed_at: new Date().toISOString(),
+    }, { onConflict: "provider_message_id" });
+    if (invalidInsertError) throw new Error("invalid_message_persistence_failed");
     console.warn("evolution_message_not_processable", {
       eventName: message.eventName,
       hasSenderJid: Boolean(message.senderJid),
       hasRemoteJid: Boolean(message.remoteJid),
       hasPhone: Boolean(message.senderE164),
       hasText: Boolean(message.text),
+      reason: invalidError,
     });
-    return { action: "ignored_invalid_message" as const };
+    return { action: "ignored_invalid_message" as const, reason: invalidError };
   }
 
   const { data: existing } = await client.from("whatsapp_inbound_messages").select("id,action").eq("provider_message_id", message.providerMessageId).maybeSingle();
-  if (existing) return { action: "duplicate" as const };
+  if (existing) return { action: "duplicate" as const, reason: "provider_message_id" as const };
 
   const { data: lead, error: leadError } = await client.from("leads").select("id,name,whatsapp_e164,registration_code").eq("cohort_id", COHORT_ID).eq("whatsapp_e164", message.senderE164).maybeSingle();
   const listo = /^listo\b/i.test(message.text);

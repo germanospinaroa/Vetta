@@ -22,8 +22,10 @@ export async function POST(request: Request) {
   try { payload = JSON.parse(raw); } catch { return NextResponse.json({ ok: false, code: "invalid_json" }, { status: 400 }); }
   try {
     const result = await processEvolutionMessage(payload);
+    console.info("evolution_webhook_processed", { action: result.action, reason: "reason" in result ? result.reason : undefined });
     return NextResponse.json({ ok: true, action: result.action });
   } catch {
+    console.error("evolution_webhook_processing_failed");
     return NextResponse.json({ ok: false, code: "processing_failed" }, { status: 503, headers: { "retry-after": "30" } });
   }
 }
