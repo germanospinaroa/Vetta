@@ -166,3 +166,120 @@ describe("VETTA registration contract", () => {
     expect(result.conclusion).toContain("información pendiente");
   });
 });
+
+describe("VETTA matrix diagnostic V3", () => {
+  it("integrates a compatible concrete opportunity without inventing certainty", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers("specific"), opportunity: "Consultoría", investmentKnown: "yes", recurringKnown: "yes", essentialFunds: "no", debt: "no", requiredHours: "known_fit", lossCapacity: "comfortable", demand: "real_customers", dependence: "can_pause", support: "documented", evidence: "documents", fit: "strong", economics: "clear" });
+    expect(result.diagnosisTitle).toContain("base concreta");
+    expect(result.findings.some((item) => item.id === "evidence-with-boundaries")).toBe(true);
+    expect(result.synthesis).toContain("garantía independiente");
+  });
+
+  it("prioritizes elevated investment with unclear exposure", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Franquicia", investmentKnown: "yes", recurringKnown: "unknown", essentialFunds: "yes", debt: "unknown", lossCapacity: "essential" });
+    expect(result.findings[0]?.id).toBe("financial-exposure");
+    expect(result.actions[0]?.question).toContain("necesidades básicas");
+  });
+
+  it("integrates low availability, operational demand and personal dependence", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Tienda online", availableHours: "2 horas por semana", requiredHours: "known_mismatch", dependence: "depends_on_me", fit: "weak" });
+    expect(result.findings.some((item) => item.id === "availability-dependence")).toBe(true);
+    expect(result.findings.filter((item) => item.sourceCriteria.includes("time")).length).toBeLessThan(4);
+  });
+
+  it("does not convert expressed demand into proven viability", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Curso digital", demand: "expressed_interest", evidence: "claims", economics: "unknown" });
+    expect(result.findings.some((item) => item.id === "demand-economics-gap")).toBe(true);
+    expect(result.strengths.join(" ")).not.toContain("clientes o compras reales");
+  });
+
+  it("integrates apparently low entry cost with unknown recurring commitments", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Membresía", investmentKnown: "yes", recurringKnown: "unknown", lossCapacity: "limited" });
+    expect(result.findings.some((item) => item.id === "incomplete-cost-exposure")).toBe(true);
+    expect(result.actions.some((item) => item.question.includes("primeros meses"))).toBe(true);
+  });
+
+  it("keeps documented support separate from operational dependence", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Agencia", dependence: "depends_on_me", support: "claimed", requiredHours: "unknown" });
+    expect(result.findings.some((item) => item.id === "support-dependence")).toBe(true);
+    expect(result.findings.some((item) => item.id === "unmeasured-operational-load")).toBe(true);
+  });
+
+  it("surfaces a direct contradiction instead of repeating fit and time", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Venta directa", fit: "strong", requiredHours: "known_mismatch" });
+    expect(result.findings.some((item) => item.id === "fit-time-contradiction")).toBe(true);
+    expect(new Set(result.findings.map((item) => item.id)).size).toBe(result.findings.length);
+  });
+
+  it("returns a useful information gap when answers are mostly unknown", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Idea", investmentKnown: "unknown", recurringKnown: "unknown", requiredHours: "unknown", lossCapacity: "unknown", demand: "unknown", dependence: "unknown", support: "unknown", evidence: "unknown", economics: "unknown" });
+    expect(result.findings.some((item) => item.id === "decision-information-gap")).toBe(true);
+    expect(result.conclusion).toContain("información");
+  });
+
+  it("uses a comparison framework and never declares a winner", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers("comparing"), opportunity: "Alternativa A", demand: "real_customers", economics: "clear" });
+    expect(result.findings.some((item) => item.id === "comparison-framework")).toBe(true);
+    expect(result.diagnosisTitle).toContain("comparables");
+    expect(result.conclusion).not.toContain("ganadora");
+  });
+
+  it("keeps comparison with insufficient criteria actionable", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers("comparing"), opportunity: "Alternativa B", investmentKnown: "unknown", recurringKnown: "unknown", demand: "unknown", evidence: "unknown", economics: "unknown" });
+    expect(result.actions.length).toBeGreaterThan(0);
+    expect(result.actions.length).toBeLessThanOrEqual(result.findings.length);
+    expect(result.actions.some((item) => item.question.includes("comprobar") || item.question.includes("dato"))).toBe(true);
+  });
+
+  it("consolidates comparison uncertainty instead of repeating the same gap", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers("comparing"), opportunity: "Alternativa única", recurringKnown: "unknown", demand: "unknown", evidence: "unknown", economics: "unknown" });
+    expect(result.findings.map((item) => item.id)).toEqual(["comparison-framework"]);
+    expect(result.actions).toHaveLength(1);
+  });
+
+  it("does not treat exploration without an opportunity as a financial risk", async () => {
+    const { diagnoseExploration } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseExploration({ path: "exploring", time: "low", budget: "limited", risk: "low", goal: "flexibility", support: "structured" });
+    expect(result.synthesis).toContain("no es un riesgo financiero confirmado");
+    expect(result.findings.some((item) => item.id === "exploration-constraints")).toBe(true);
+  });
+
+  it("turns clear exploration preferences and restrictions into filters", async () => {
+    const { diagnoseExploration } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseExploration({ path: "exploring", time: "medium", budget: "none", risk: "low", goal: "learning", interests: "servicios digitales", support: "structured" });
+    expect(result.findings.some((item) => item.id === "exploration-preferences")).toBe(true);
+    expect(result.actions.length).toBeGreaterThan(0);
+    expect(result.conclusion).toContain("no concluir qué oportunidad conviene");
+  });
+
+  it("gives exploration a concrete filter before any financial commitment", async () => {
+    const { diagnoseExploration } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseExploration({ path: "exploring", time: "low", budget: "limited", risk: "low", goal: "flexibility", interests: "servicios digitales", support: "structured" });
+    const filter = result.findings.find((item) => item.id === "exploration-fit-filter");
+    expect(filter?.interpretation).toContain("Serían incompatibles");
+    expect(filter?.recommendedAction).toContain("sin pagar");
+    expect(filter?.verificationQuestion).toContain("límites");
+  });
+
+  it("keeps findings, actions and evidence bounded for concise results", async () => {
+    const { defaultAnswers, diagnoseOpportunity } = await import("../lib/matrix-diagnostic");
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Modelo", debt: "yes", lossCapacity: "limited", requiredHours: "known_mismatch", dependence: "depends_on_me", demand: "claims_only", economics: "unknown", support: "none", evidence: "none", fit: "weak" });
+    expect(result.findings.length).toBeLessThanOrEqual(6);
+    expect(result.strengths.length).toBeLessThanOrEqual(2);
+    expect(result.overlooked.length).toBeLessThanOrEqual(3);
+    expect(result.actions.length).toBeGreaterThan(0);
+    expect(result.actions.length).toBeLessThanOrEqual(result.findings.length);
+    expect(new Set(result.findings.map((item) => item.id)).size).toBe(result.findings.length);
+  });
+});
