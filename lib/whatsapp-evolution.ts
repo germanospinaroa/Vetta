@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { getPublicConfig } from "@/lib/config";
 import { sendEvolutionText } from "@/lib/evolution";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { extractEvolutionGroupData, extractEvolutionMessage, matchesConfiguredEvolutionGroup } from "@/lib/whatsapp-evolution-parser";
+import { extractEvolutionGroupData, extractEvolutionMessage, matchesConfiguredEvolutionGroup, validateWhatsAppGroupUrl } from "@/lib/whatsapp-evolution-parser";
 
 const COHORT_ID = process.env.NEXT_PUBLIC_ACTIVE_COHORT_ID;
 const INSTANCE = process.env.EVOLUTION_INSTANCE || "momentum";
@@ -11,8 +11,12 @@ function firstName(name: string) {
   return name.trim().split(/\s+/)[0] || name;
 }
 
-function safeGroupLink() {
-  return process.env.VETTA_GROUP_LINK || getPublicConfig().cohort.groupUrl;
+async function getConfiguredGroupLink(client: NonNullable<ReturnType<typeof createSupabaseAdminClient>>) {
+  const { data, error } = await client.from("cohorts").select("group_url").eq("id", COHORT_ID).maybeSingle();
+  if (error || !data) throw new Error("group_link_configuration_unavailable");
+  const groupLink = validateWhatsAppGroupUrl(data.group_url);
+  if (!groupLink) throw new Error("group_link_configuration_invalid");
+  return groupLink;
 }
 
 function matrixLink() {
@@ -113,7 +117,8 @@ export async function processEvolutionMessage(payload: unknown) {
   if (inboundError) throw new Error("inbound_persistence_failed");
   if (leadError || !lead) return { action: "unmatched" as const };
 
-  const welcome = await sendOnce(client, lead, "welcome", `Hola, ${firstName(lead.name)}. Confirmamos que recibimos tu registro para NO EMPRENDAS TODAVÍA.\n\nEste es el grupo privado Antes de Emprender:\n${safeGroupLink()}\n\nCuando estés dentro, responde LISTO por aquí para continuar.`);
+  const groupLink = await getConfiguredGroupLink(client);
+  const welcome = await sendOnce(client, lead, "welcome", `¡${firstName(lead.name)}, bienvenido a NO EMPRENDAS TODAVÍA! 🙌\n\nTu registro está confirmado.\n\nEste es el enlace para ingresar a nuestro grupo privado Antes de Emprender:\n\n${groupLink}\n\n**Es importante que ingreses:** este es nuestro único canal oficial para compartir los accesos, recordatorios e información de la masterclass.\n\nCuando estés dentro, vuelve a esta conversación y escribe **LISTO** para recibir tu regalo: **EL FILTRO ANTES DEL SÍ**. 🎁`);
   await recordEvent(client, lead.id, "conversation_confirmed", { source: "evolution", automated: true });
   await recordEvent(client, lead.id, "whatsapp_clicked", { source: "evolution", automated: true });
   if (listo) {

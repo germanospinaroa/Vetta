@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
-import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender } from "../lib/whatsapp-evolution-parser";
+import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
 
 describe("VETTA registration contract", () => {
   it("normalizes an international WhatsApp number to E.164", () => {
@@ -67,5 +67,12 @@ describe("VETTA registration contract", () => {
     expect(matchesConfiguredEvolutionGroup(group.groupJid, "120363430193664827@g.us")).toBe(false);
     expect(group.participants[0]?.phoneE164).toBeNull();
     expect(group.participants[1]?.phoneE164).toBe("+573001234567");
+  });
+
+  it("only accepts a non-empty WhatsApp invitation URL", () => {
+    expect(validateWhatsAppGroupUrl("https://chat.whatsapp.com/Ehwx53ZOXRp1LEkggc3Rh5")).toBe("https://chat.whatsapp.com/Ehwx53ZOXRp1LEkggc3Rh5");
+    expect(validateWhatsAppGroupUrl(undefined)).toBeNull();
+    expect(validateWhatsAppGroupUrl("undefined")).toBeNull();
+    expect(validateWhatsAppGroupUrl("https://example.com/group")).toBeNull();
   });
 });
