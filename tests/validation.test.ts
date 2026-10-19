@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
-import { buildWhatsAppHref } from "../lib/whatsapp";
+import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
 import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender } from "../lib/whatsapp-evolution-parser";
 
@@ -19,6 +19,14 @@ describe("VETTA registration contract", () => {
     expect(href).toContain("wa.me/573001234567");
     expect(decodeURIComponent(href || "")).toContain("Mi código es VETTA-ABC123");
     expect(decodeURIComponent((href || "").split("?text=")[1] || "")).not.toContain("3001234567");
+  });
+
+  it("builds a generic continuation message without exposing an existing code", () => {
+    const href = buildGenericWhatsAppHref("573001234567");
+    const message = decodeURIComponent((href || "").split("?text=")[1] || "");
+    expect(message).toContain("continuando mi registro");
+    expect(message).not.toContain("VETTA-");
+    expect(message).not.toContain("573001234567");
   });
 
   it("only accepts the three defined campaign territories", () => {

@@ -12,7 +12,7 @@ const countries = getCountries()
   .map((code) => [code, regionNames.of(code) || code] as const)
   .sort((a, b) => a[1].localeCompare(b[1], "es"));
 
-type Result = { ok: true; registrationCode: string; whatsappHref?: string; mode: "TEST" | "LIVE" } | { ok: false; message: string };
+type Result = { ok: true; registrationCode?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean } | { ok: false; message: string };
 
 export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSuccess?: boolean }) {
   const router = useRouter();
@@ -59,7 +59,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: data.ok ? "unknown" : data.code || "request_failed" } }) });
         return;
       }
-      if (redirectOnSuccess) {
+      if (redirectOnSuccess && !data.existing && data.registrationCode) {
         router.push(`/confirmacion?code=${encodeURIComponent(data.registrationCode)}` as never);
         return;
       }
@@ -75,13 +75,13 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
   if (state === "success" && result?.ok) {
     return (
       <div className="success-panel" role="status" aria-live="polite">
-        <span className="success-index">REGISTRO RECIBIDO</span>
-        <h2>Tu registro está recibido.</h2>
-        <p>Ahora confirma tu acceso por WhatsApp para recibir las indicaciones de los encuentros.</p>
-        <div className="registration-code"><span>Código</span><strong>{result.registrationCode}</strong></div>
+        <span className="success-index">{result.existing ? "CONTINUAR REGISTRO" : "REGISTRO RECIBIDO"}</span>
+        <h2>{result.existing ? "Puedes continuar por WhatsApp." : "Tu registro está recibido."}</h2>
+        <p>{result.existing ? "Abre la conversación privada para continuar con tu inscripción." : "Ahora confirma tu acceso por WhatsApp para recibir las indicaciones de los encuentros."}</p>
+        {result.registrationCode && <div className="registration-code"><span>Código</span><strong>{result.registrationCode}</strong></div>}
         {result.whatsappHref ? (
-          <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "whatsapp_clicked", registrationCode: result.registrationCode }) })}>
-            Confirmar mi acceso por WhatsApp <span aria-hidden="true">↗</span>
+          <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => { const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
+            CONTINUAR POR WHATSAPP <span aria-hidden="true">↗</span>
           </a>
         ) : (
           <p className="config-note">Configuración TEST pendiente: el número oficial de WhatsApp todavía no está configurado.</p>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPublicConfig } from "@/lib/config";
 import { saveDemoLead } from "@/lib/demo-store";
-import { buildWhatsAppHref } from "@/lib/whatsapp";
+import { buildGenericWhatsAppHref, buildWhatsAppHref } from "@/lib/whatsapp";
 import { persistRegistration } from "@/lib/persistence";
 import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
 import { createConfirmationToken } from "@/lib/confirmation";
@@ -28,7 +28,9 @@ export async function POST(request: Request) {
     let lead;
     try { lead = config.demoMode ? saveDemoLead(parsed.data, normalizedPhone, config.cohort.id) : await persistRegistration(parsed.data, normalizedPhone, { qa }); }
     catch (error) {
-      if (error instanceof Error && error.message === "duplicate_registration") return NextResponse.json({ ok: false, code: "duplicate_registration", message: "Ya existe un registro con este WhatsApp para esta cohorte." }, { status: 409 });
+      if (error instanceof Error && error.message === "duplicate_registration") {
+        return NextResponse.json({ ok: true, existing: true, mode: config.demoMode ? "TEST" : "LIVE", whatsappHref: buildGenericWhatsAppHref(config.whatsappNumber) });
+      }
       return NextResponse.json({ ok: false, code: "persistence_error", message: "No pudimos guardar tu registro. Inténtalo de nuevo." }, { status: 503 });
     }
     if (!lead) return NextResponse.json({ ok: false, code: "persistence_not_configured", message: "El registro está pendiente de configuración operativa." }, { status: 503 });
