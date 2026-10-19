@@ -1,0 +1,21 @@
+{
+  "contract": "Landing pública corta para NO EMPRENDAS TODAVÍA: cuatro bloques, tres CTAs de contenido, cero rótulos internos y preservación del registro existente.",
+  "targetViewports": ["320x740", "375x812", "390x844", "430x932", "1440x900"],
+  "accessibility": {"status": "pass", "evidence": "Render inspeccionado con landmarks, headings, alt text de las fotografías, foco visible heredado y reduced-motion CSS."},
+  "responsive": {"status": "pass", "evidence": "Chrome CDP reportó scrollWidth igual a innerWidth en los cinco viewports y no detectó overflow horizontal."},
+  "contentStates": {
+    "loading": {"status": "not-applicable", "reason": "La landing pública no expone un estado de carga interactivo."},
+    "empty": {"status": "not-applicable", "reason": "La landing no tiene estado vacío propio."},
+    "error": {"status": "not-applicable", "reason": "No se provocó un error de contenido durante la revisión pública."},
+    "partial": {"status": "not-applicable", "reason": "La landing no tiene un estado parcial previsto."},
+    "success": {"status": "pass", "evidence": "Production mostró los cuatro bloques, tres enlaces de contenido a /registro, Team.png y el cierre integrado."},
+    "permission": {"status": "not-applicable", "reason": "La landing pública no requiere permisos."}
+  },
+  "renderedEvidence": [
+    {"viewport": "320x740", "artifact": "landing-320x740-full.png", "observation": "Captura completa móvil; cuatro bloques, tres CTAs de contenido y sin rótulos internos."},
+    {"viewport": "375x812", "artifact": "landing-375x812-full.png", "observation": "Captura completa móvil; comparaciones legibles y fotografía del equipo íntegra."},
+    {"viewport": "390x844", "artifact": "landing-390x844-full.png", "observation": "Captura completa del viewport móvil principal; CTA y contenido sin overflow."},
+    {"viewport": "430x932", "artifact": "landing-430x932-full.png", "observation": "Captura completa móvil; espaciado reducido y cierre integrado."},
+    {"viewport": "1440x900", "artifact": "landing-1440x900-full.png", "observation": "Captura completa desktop de 1440x4879 compuesta desde seis segmentos consecutivos; cubre la página completa."}
+  ]
+}
