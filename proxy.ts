@@ -12,7 +12,14 @@ export async function proxy(request: NextRequest) {
       setAll(values) { values.forEach(({ name, value }) => { request.cookies.set(name, value); response = NextResponse.next({ request }); response.cookies.set(name, value); }); },
     },
   });
-  await supabase.auth.getUser();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user && request.nextUrl.pathname.startsWith("/admin")) {
+    const target = new URL("/auth/login", request.url);
+    target.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+    const redirectResponse = NextResponse.redirect(target);
+    response.cookies.getAll().forEach(({ name, value, ...options }) => redirectResponse.cookies.set(name, value, options));
+    return redirectResponse;
+  }
   return response;
 }
 
