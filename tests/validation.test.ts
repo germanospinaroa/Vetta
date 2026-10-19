@@ -3,6 +3,7 @@ import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
 import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
+import { defaultAnswers, diagnoseExploration, diagnoseOpportunity } from "../lib/matrix-diagnostic";
 
 describe("VETTA registration contract", () => {
   it("normalizes an international WhatsApp number to E.164", () => {
@@ -74,5 +75,43 @@ describe("VETTA registration contract", () => {
     expect(validateWhatsAppGroupUrl(undefined)).toBeNull();
     expect(validateWhatsAppGroupUrl("undefined")).toBeNull();
     expect(validateWhatsAppGroupUrl("https://example.com/group")).toBeNull();
+  });
+
+  it("produces a materially different result when recurring costs are unknown", () => {
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Ecommerce", investmentKnown: "yes", recurringKnown: "unknown", availableHours: "2 horas al día", requiredHours: "known_fit", lossCapacity: "comfortable", demand: "expressed_interest", dependence: "depends_on_me", support: "documented", scale: "unclear", evidence: "claims", fit: "partial", economics: "unknown" });
+    expect(result.overlooked.join(" ")).toContain("costos");
+    expect(result.nextSteps.join(" ")).toContain("Solicita");
+  });
+
+  it("keeps evidence-positive results from hiding personal debt risk", () => {
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Consultoría", investmentKnown: "yes", recurringKnown: "yes", debt: "yes", lossCapacity: "limited", demand: "real_customers", evidence: "documents", support: "documented", fit: "strong", economics: "clear", scale: "clear", requiredHours: "known_fit", dependence: "can_pause" });
+    expect(result.overlooked.join(" ")).toContain("Riesgo financiero");
+    expect(result.conclusion).toContain("alerta");
+  });
+
+  it("prioritizes the economic model when the income mechanism is unclear", () => {
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Oferta atractiva", demand: "claims_only", evidence: "claims", economics: "unknown", investmentKnown: "unknown", recurringKnown: "unknown" });
+    expect(result.criteria.find((item) => item.key === "economics")?.question).toContain("Cómo se genera");
+    expect(result.overlooked.join(" ")).toContain("Viabilidad económica");
+  });
+
+  it("returns a search profile instead of diagnosing an opportunity that does not exist", () => {
+    const result = diagnoseExploration({ path: "exploring", time: "low", budget: "limited", risk: "low", goal: "flexibility", support: "structured" });
+    expect(result.kind).toBe("exploration");
+    expect(result.headline).toContain("flexibilidad");
+    expect(result.nextSteps.length).toBe(3);
+  });
+
+  it("recognizes favorable evidence without guaranteeing success", () => {
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Modelo documentado", investmentKnown: "yes", recurringKnown: "yes", essentialFunds: "no", lossCapacity: "comfortable", availableHours: "2", demand: "real_customers", dependence: "can_pause", support: "documented", scale: "clear", evidence: "documents", fit: "strong", economics: "clear", requiredHours: "known_fit" });
+    expect(result.coverage).toBeGreaterThanOrEqual(8);
+    expect(result.conclusion).toContain("sin garantizar");
+  });
+
+  it("gives an information-gathering plan when nearly everything is unknown", () => {
+    const result = diagnoseOpportunity({ ...defaultAnswers(), opportunity: "Todavía no sé", investmentKnown: "unknown", recurringKnown: "unknown", essentialFunds: "unknown", debt: "unknown", requiredHours: "unknown", lossCapacity: "unknown", demand: "unknown", dependence: "unknown", support: "unknown", scale: "unknown", evidence: "unknown", fit: "unknown", economics: "unknown" });
+    expect(result.coverage).toBe(0);
+    expect(result.nextSteps.length).toBe(3);
+    expect(result.conclusion).toContain("información pendiente");
   });
 });

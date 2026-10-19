@@ -28,19 +28,53 @@ async function recordEvent(client: ReturnType<typeof createSupabaseAdminClient>,
 }
 
 async function sendOnce(client: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, lead: { id: string; name: string; whatsapp_e164: string }, kind: "welcome" | "matrix", text: string) {
-  const { data: existing } = await client.from("whatsapp_outbound_messages").select("id,status,provider_message_id").eq("lead_id", lead.id).eq("kind", kind).maybeSingle();
-  if (existing?.status === "sent") return { sent: false, duplicate: true };
+  const { data: existing } = await client.from("whatsapp_outbound_messages").select("id,status,provider_message_id,created_at").eq("lead_id", lead.id).eq("kind", kind).maybeSingle();
+  if (existing?.status === "sent") return { sent: false, duplicate: true, providerMessageId: existing.provider_message_id || null };
+  if (existing?.status === "pending" && existing.created_at && Date.now() - Date.parse(existing.created_at) < 5 * 60 * 1000) {
+    return { sent: false, duplicate: true, pending: true, providerMessageId: existing.provider_message_id || null };
+  }
   const { data: row, error: insertError } = await client.from("whatsapp_outbound_messages").upsert({ lead_id: lead.id, kind, recipient_e164: lead.whatsapp_e164, status: "pending", error_code: null }, { onConflict: "lead_id,kind" }).select("id,status").single();
   if (insertError || !row) throw new Error("outbound_state_failed");
   try {
     const response = await sendEvolutionText(lead.whatsapp_e164, text);
     const providerId = typeof response.key === "object" && response.key ? String((response.key as Record<string, unknown>).id || "") : undefined;
     await client.from("whatsapp_outbound_messages").update({ status: "sent", provider_message_id: providerId || null, sent_at: new Date().toISOString(), error_code: null }).eq("id", row.id);
-    return { sent: true, duplicate: false };
+    return { sent: true, duplicate: false, providerMessageId: providerId || null };
   } catch {
     await client.from("whatsapp_outbound_messages").update({ status: "failed", error_code: "evolution_send_failed" }).eq("id", row.id);
     throw new Error("evolution_send_failed");
   }
+}
+
+async function deliverMatrixForLead(client: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, lead: { id: string; name: string; whatsapp_e164: string }) {
+  const text = `¡Perfecto, ${firstName(lead.name)}! 🎁\n\nAquí tienes EL FILTRO ANTES DEL SÍ, tu diagnóstico interactivo para descubrir qué revisar antes de comprometerte con una oportunidad:\n\n${matrixLink()}\n\nRespóndelo y recibirás un análisis con tus principales hallazgos, señales de alerta y próximos pasos.\n\nRecuerda: los accesos a nuestros dos encuentros en vivo se compartirán en el grupo privado Antes de Emprender.`;
+  const sent = await sendOnce(client, lead, "matrix", text);
+  if (sent.sent) {
+    await recordEvent(client, lead.id, "matrix_sent", { source: "evolution", automated: true });
+    await client.from("whatsapp_inbound_messages").update({ action: "matrix_sent", error_code: null }).eq("lead_id", lead.id).in("action", ["listo_pending_group_verification", "matrix_delivery_failed"]);
+  }
+  return sent;
+}
+
+export async function recoverPendingMatrixDeliveries() {
+  const client = createSupabaseAdminClient();
+  if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
+  const { data: pending, error } = await client.from("whatsapp_inbound_messages").select("lead_id").in("action", ["listo_pending_group_verification", "matrix_delivery_failed"]).not("lead_id", "is", null).limit(20);
+  if (error) throw new Error("pending_matrix_lookup_failed");
+  let delivered = 0;
+  let failed = 0;
+  for (const row of pending || []) {
+    if (!row.lead_id) continue;
+    const { data: lead } = await client.from("leads").select("id,name,whatsapp_e164").eq("id", row.lead_id).eq("cohort_id", COHORT_ID).maybeSingle();
+    if (!lead) continue;
+    try {
+      const result = await deliverMatrixForLead(client, lead);
+      if (result.sent) delivered += 1;
+    } catch {
+      failed += 1;
+    }
+  }
+  return { pending: pending?.length || 0, delivered, failed };
 }
 
 export async function processEvolutionMessage(payload: unknown) {
@@ -59,14 +93,6 @@ export async function processEvolutionMessage(payload: unknown) {
       if (inserted?.code === "23505") continue;
       if (inserted) throw new Error("group_event_persistence_failed");
       await recordEvent(client, lead.id, "group_join_verified", { source: "evolution", automated: true });
-      const { data: pendingListo } = await client.from("whatsapp_inbound_messages").select("id").eq("lead_id", lead.id).eq("action", "listo_pending_group_verification").limit(1).maybeSingle();
-      if (pendingListo) {
-        const sent = await sendOnce(client, lead, "matrix", `¡Perfecto, ${firstName(lead.name)}! Confirmamos tu ingreso al grupo.\n\nAquí tienes EL FILTRO ANTES DEL SÍ:\n${matrixLink()}\n\nGuárdalo para trabajar con él durante la masterclass.`);
-        if (sent.sent) {
-          await recordEvent(client, lead.id, "matrix_sent", { source: "evolution", automated: true });
-          await client.from("whatsapp_inbound_messages").update({ action: "matrix_sent" }).eq("lead_id", lead.id).eq("action", "listo_pending_group_verification");
-        }
-      }
       verified += 1;
     }
     return { action: verified ? "group_join_verified" as const : "group_event_unmatched" as const };
@@ -123,6 +149,13 @@ export async function processEvolutionMessage(payload: unknown) {
   await recordEvent(client, lead.id, "whatsapp_clicked", { source: "evolution", automated: true });
   if (listo) {
     await recordEvent(client, lead.id, "group_join_declared", { source: "whatsapp", automated: false });
+    try {
+      const matrix = await deliverMatrixForLead(client, lead);
+      if (matrix.sent || matrix.duplicate) return { action: matrix.sent ? "matrix_sent" as const : "matrix_delivery_pending" as const, welcomeDuplicate: welcome.duplicate };
+    } catch {
+      await client.from("whatsapp_inbound_messages").update({ action: "matrix_delivery_failed", error_code: "matrix_delivery_failed" }).eq("provider_message_id", message.providerMessageId);
+      return { action: "matrix_delivery_failed" as const, welcomeDuplicate: welcome.duplicate };
+    }
     return { action: "listo_pending_group_verification" as const, welcomeDuplicate: welcome.duplicate };
   }
   return { action: "welcomed" as const, welcomeDuplicate: welcome.duplicate };

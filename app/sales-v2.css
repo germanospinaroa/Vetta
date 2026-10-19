@@ -16,3 +16,5 @@
 .sales-v2{overflow-x:clip}
 @media(max-width:899px){.sales-v2 .sales-shell{width:calc(100% - 44px);max-width:calc(100% - 44px)}.sales-v2-hero-copy{width:100%;max-width:100%}.sales-v2-hero h1{font-size:clamp(2.25rem,10.8vw,3.1rem);max-width:100%;overflow-wrap:normal;word-break:normal}.sales-v2-promise,.sales-v2-support,.sales-v2-gift-note{max-width:100%;overflow-wrap:anywhere}.sales-v2-section-heading h2,.sales-v2-gift h2,.sales-v2-close h2{overflow-wrap:anywhere;word-break:normal}.sales-v2-header-inner{min-width:0}.sales-v2-wordmark{min-width:0;white-space:nowrap}.sales-v2-header-cta{display:none}.sales-v2 .sales-button{max-width:100%}}
 @media(max-width:899px){.sales-v2-experience-note{font-size:13px}.sales-v2-inline-close{margin-top:48px;padding-top:42px}.sales-v2-inline-close h3{font-size:clamp(2rem,9vw,3rem)}}
+
+.sales-v2-gift-promise-sub{max-width:510px;margin:0;color:#f5c879;font:700 14px/1.45 var(--font-sales-manrope),Manrope,sans-serif}

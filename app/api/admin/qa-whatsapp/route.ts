@@ -4,6 +4,7 @@ import { getPublicConfig } from "@/lib/config";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { persistQaRegistration } from "@/lib/persistence";
 import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
+import { recoverPendingMatrixDeliveries } from "@/lib/whatsapp-evolution";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,10 @@ export async function POST(request: Request) {
   if (!admin) return NextResponse.json({ ok: false, code: "unauthorized" }, { status: 401 });
   try {
     const body = await request.json();
+    if (body?.action === "recover_pending_matrix") {
+      const result = await recoverPendingMatrixDeliveries();
+      return NextResponse.json({ ok: true, recovery: result });
+    }
     const parsed = registrationSchema.safeParse({ ...body, consent: "on", consentVersion: "v1", utm_campaign: "vetta_qa_whatsapp" });
     if (!parsed.success) return NextResponse.json({ ok: false, code: "validation_error", message: "Revisa los datos del participante QA." }, { status: 400 });
     let phone: string;
