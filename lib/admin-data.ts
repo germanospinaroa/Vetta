@@ -21,7 +21,49 @@ export async function getAdminLeads(search = "") {
   let query = client.from("leads").select("id, registration_code, name, whatsapp_e164, city, country_code, current_stage, created_at, cohorts(name)").order("created_at", { ascending: false }).limit(100);
   if (safeSearch) query = query.or(`name.ilike.%${safeSearch}%,registration_code.ilike.%${safeSearch}%,whatsapp_e164.ilike.%${safeSearch}%`);
   const { data, error } = await query;
-  return { configured: !error, leads: data || [] };
+  if (error || !data) return { configured: false, leads: [] as Array<Record<string, unknown>> };
+  const ids = data.map((lead) => String(lead.id));
+  if (ids.length === 0) return { configured: true, leads: [] };
+  const [{ data: events }, { data: inbound }, { data: outbound }] = await Promise.all([
+    client.from("lead_events").select("lead_id,name").in("lead_id", ids),
+    client.from("whatsapp_inbound_messages").select("lead_id,action").in("lead_id", ids),
+    client.from("whatsapp_outbound_messages").select("lead_id,kind,status,error_code").in("lead_id", ids),
+  ]);
+  const eventMap = new Map<string, Set<string>>();
+  for (const event of events || []) {
+    const leadEvents = eventMap.get(String(event.lead_id)) || new Set<string>();
+    leadEvents.add(String(event.name));
+    eventMap.set(String(event.lead_id), leadEvents);
+  }
+  const inboundMap = new Map<string, Set<string>>();
+  for (const message of inbound || []) {
+    const actions = inboundMap.get(String(message.lead_id)) || new Set<string>();
+    actions.add(String(message.action));
+    inboundMap.set(String(message.lead_id), actions);
+  }
+  const outboundMap = new Map<string, Set<string>>();
+  for (const message of outbound || []) {
+    if (message.status !== "sent") continue;
+    const sent = outboundMap.get(String(message.lead_id)) || new Set<string>();
+    sent.add(String(message.kind));
+    outboundMap.set(String(message.lead_id), sent);
+  }
+  const leads = data.map((lead) => {
+    const id = String(lead.id);
+    const leadEvents = eventMap.get(id) || new Set<string>();
+    const actions = inboundMap.get(id) || new Set<string>();
+    const sent = outboundMap.get(id) || new Set<string>();
+    return {
+      ...lead,
+      whatsapp_status: [
+        leadEvents.has("conversation_confirmed") ? "conversación" : null,
+        sent.has("welcome") ? "bienvenida" : null,
+        leadEvents.has("group_join_verified") ? "grupo verificado" : actions.has("group_join_declared") ? "LISTO pendiente" : null,
+        sent.has("matrix") ? "matriz enviada" : null,
+      ].filter(Boolean).join(" · ") || "pendiente",
+    };
+  });
+  return { configured: true, leads };
 }
 
 export async function getAdminCohorts() {
