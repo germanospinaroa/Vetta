@@ -18,3 +18,33 @@
 @media(max-width:899px){.sales-v2-experience-note{font-size:13px}.sales-v2-inline-close{margin-top:48px;padding-top:42px}.sales-v2-inline-close h3{font-size:clamp(2rem,9vw,3rem)}}
 
 .sales-v2-gift-promise-sub{max-width:510px;margin:0;color:#f5c879;font:700 14px/1.45 var(--font-sales-manrope),Manrope,sans-serif}
+
+/* Final editorial pass: keep the gift compact and let the experience lead. */
+.sales-v2-gift{padding:88px 0 82px}
+.sales-v2-gift h2{font-size:clamp(2.9rem,5.2vw,4.8rem);margin:0 0 22px}
+.sales-v2-gift-promise-sub{color:#d9e2ed;font-weight:500}
+.sales-v2-filter-demo p{margin:28px 0 13px;line-height:1.45}
+.sales-v2-filter-demo strong{font-size:clamp(1.2rem,2.2vw,1.8rem);line-height:1.18}
+.sales-v2-filter-demo strong span{color:#fff;font:inherit}
+.sales-v2-filter-demo small b{color:var(--v2-gold);font:800 10px/1.4 var(--font-sales-manrope),Manrope,sans-serif;letter-spacing:.08em}
+.sales-v2-filter-rule{margin:25px 0 16px}
+.sales-v2-facilitators{padding:86px 0 0}
+.sales-v2-team-image{max-width:980px;margin:30px auto 0}
+.sales-v2-team-copy{max-width:620px;margin:23px auto 0;font-size:16px;line-height:1.5}
+.sales-v2-team-names{max-width:620px;margin:14px auto 0}
+.sales-v2-inline-close{margin-top:46px;padding:52px 0 72px}
+.sales-v2-inline-close h3{max-width:680px;margin-inline:auto}
+.sales-v2-inline-close p{margin-inline:auto}
+.sales-registration-microcopy{max-width:470px;margin:18px 0 0;color:var(--sales-muted);font-size:13px;line-height:1.5}
+@media(max-width:899px){
+  .sales-v2-gift{padding:66px 0 70px}
+  .sales-v2-gift h2{font-size:clamp(2.55rem,11.5vw,3.8rem);line-height:.94}
+  .sales-v2-gift-promise{font-size:18px}
+  .sales-v2-filter-demo{padding:20px}
+  .sales-v2-filter-demo p{margin-top:24px}
+  .sales-v2-facilitators{padding:64px 0 0}
+  .sales-v2-team-image{margin-top:24px}
+  .sales-v2-team-copy{margin-top:20px;font-size:15px}
+  .sales-v2-inline-close{margin-top:34px;padding:38px 0 54px}
+  .sales-registration-microcopy{margin-top:16px;font-size:12px}
+}
