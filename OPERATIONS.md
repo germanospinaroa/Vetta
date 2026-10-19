@@ -14,7 +14,22 @@ The application never claims a conversation, group membership, matrix delivery, 
 
 ## Configurable values
 
-Dates, times, timezone, cohort links, official WhatsApp number, group link, meeting URLs, host details, capacity, legal identity, and retention rules are not configured yet. The public UI uses an explicit TEST/pre-opening state when values are missing.
+The VETTA cohort, dates, timezone, official WhatsApp number and private group link are configured in the authorized environment. The cohort must remain `draft` until legal approval and the controlled WhatsApp runbook below are complete. Retention rules and final legal approval remain pending.
+
+## Controlled opening test
+
+Run only with the cohort closed to public traffic or in an explicitly restricted preview:
+
+1. Use a controlled test identity and a valid test number.
+2. Open registration only in the restricted environment and confirm the lead, consent record, UTM attribution, registration event and unique code in Supabase.
+3. Confirm that `/confirmacion` rejects a missing or invalid signed confirmation and accepts only the persisted lead.
+4. Open the generated 1:1 WhatsApp link and verify that the prefilled text includes the prospect's first name and code.
+5. The authorized operator locates the lead by code or phone in `/admin/leads`, verifies the name and records the conversation only after evidence exists.
+6. The operator sends the configured group link, confirms the person has entered, and records the step only after the person replies `LISTO` in the 1:1 chat.
+7. The operator sends `/matriz` privately, records `matrix_sent`, and confirms that the real matrix opens and exports correctly.
+8. Remove only the test lead and its related test attribution, consent and event rows after the run. Never delete legitimate registrations or broad event history.
+
+The click, group entry, `LISTO` response and matrix delivery must not be simulated or inferred from one another.
 
 ## Message templates
 

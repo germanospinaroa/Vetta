@@ -4,13 +4,15 @@ Estado: **borrador completo pendiente de aprobación expresa**. No constituye as
 
 Responsable indicado: Germán Ospina Roa, persona natural en Colombia.
 
-Canal de atención indicado: `support@gritlab.pro`.
+Dirección indicada: Carrera 63 #90-42, Bogotá D. C., Colombia.
+
+Canales de atención indicados: `support@gritlab.pro` y `+57 314 269 4269`.
 
 ## 1. Aviso de privacidad y autorización para el tratamiento
 
 ### Responsable
 
-El responsable del tratamiento es Germán Ospina Roa, persona natural en Colombia. Para consultas, ejercicio de derechos y solicitudes relacionadas con datos personales se propone el correo `support@gritlab.pro`.
+El responsable del tratamiento es Germán Ospina Roa, persona natural en Colombia. Para consultas, ejercicio de derechos y solicitudes relacionadas con datos personales se indican el correo `support@gritlab.pro` y el teléfono `+57 314 269 4269`.
 
 ### Datos solicitados
 
@@ -78,12 +80,11 @@ Se aplican controles de acceso administrativo, RLS en Supabase, minimización de
 
 Antes de activar el formulario, confirmar:
 
-1. domicilio o dirección legal de notificación que deba publicarse;
-2. periodo o criterio definitivo de conservación;
-3. texto final del procedimiento de consultas y reclamos;
-4. proveedores, jurisdicciones y garantías de transferencia que deben declararse;
-5. si se mostrará una casilla separada de comunicaciones comerciales opcionales;
-6. aprobación expresa del responsable.
+1. periodo o criterio definitivo de conservación;
+2. texto final del procedimiento de consultas y reclamos;
+3. proveedores, jurisdicciones y garantías de transferencia que deben declararse;
+4. si se mostrará una casilla separada de comunicaciones comerciales opcionales;
+5. aprobación expresa del responsable.
 
 ## 2. Términos de participación
 
