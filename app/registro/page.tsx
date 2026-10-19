@@ -4,5 +4,24 @@ import { getPublicConfig, getQaPublicConfig } from "@/lib/config";
 import { cookies } from "next/headers";
 import { hasValidQaSession, qaSessionCookieName } from "@/lib/qa-session";
 
-export const metadata: Metadata = { title: "Reserva tu lugar | NO EMPRENDAS TODAVÍA.", robots: { index: false, follow: true } };
+const siteUrl = "https://noemprendas.gritlab.pro";
+const ogImage = `${siteUrl}/og-no-emprendas.png`;
+const ogTitle = "NO EMPRENDAS TODAVÍA. ¿Y si hay más de lo que imaginas?";
+const ogDescription = "Dos encuentros en vivo para ampliar tu perspectiva y explorar nuevas posibilidades de emprender. 20 y 22 de octubre · 8:00 p. m. Colombia. Reserva tu lugar.";
+
+export const metadata: Metadata = {
+  title: "Reserva tu lugar | NO EMPRENDAS TODAVÍA.",
+  description: ogDescription,
+  metadataBase: new URL(siteUrl),
+  alternates: { canonical: `${siteUrl}/registro` },
+  openGraph: {
+    title: ogTitle,
+    description: ogDescription,
+    url: `${siteUrl}/registro`,
+    type: "website",
+    images: [{ url: ogImage, width: 1200, height: 630, alt: "NO EMPRENDAS TODAVÍA. sobre una imagen cinematográfica de una persona reflexionando frente a un portal luminoso" }],
+  },
+  twitter: { card: "summary_large_image", title: ogTitle, description: ogDescription, images: [ogImage] },
+  robots: { index: false, follow: true },
+};
 export default async function RegistrationPage() { const qa = hasValidQaSession((await cookies()).get(qaSessionCookieName)?.value); return <RegistrationSalesPage cohort={(qa ? getQaPublicConfig() : getPublicConfig()).cohort} />; }

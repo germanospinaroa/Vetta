@@ -4,7 +4,7 @@ import { AnalyticsRuntime } from "@/components/analytics-runtime";
 import "./globals.css";
 import "./sales-v2.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VETTA_ENV === "production" ? "https://vetta-beryl.vercel.app" : "http://localhost:3000");
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://noemprendas.gritlab.pro";
 
 export const viewport = {
   width: "device-width",
@@ -17,8 +17,6 @@ export const metadata: Metadata = {
   description: "Aprende a evaluar oportunidades de negocio antes de comprometer tu tiempo y tu dinero. Dos encuentros en vivo y una herramienta práctica para tomar mejores decisiones.",
   applicationName: "NO EMPRENDAS TODAVÍA.",
   metadataBase: new URL(siteUrl),
-  alternates: { canonical: "/" },
-  openGraph: { title: "NO EMPRENDAS TODAVÍA. | Masterclass en vivo", description: "Aprende a evaluar oportunidades de negocio antes de comprometer tu tiempo y tu dinero. Dos encuentros en vivo y una herramienta práctica para tomar mejores decisiones.", type: "website", url: siteUrl },
   robots: { index: process.env.VETTA_ENV === "production", follow: true },
 };
 
