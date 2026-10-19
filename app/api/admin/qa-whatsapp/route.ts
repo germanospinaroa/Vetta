@@ -9,10 +9,17 @@ import { recoverPendingMatrixDeliveries } from "@/lib/whatsapp-evolution";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const admin = await getAuthorizedAdmin("admin");
-  if (!admin) return NextResponse.json({ ok: false, code: "unauthorized" }, { status: 401 });
   try {
     const body = await request.json();
+    if (body?.action === "recover_pending_matrix") {
+      const recoveryToken = process.env.VETTA_RECOVERY_TOKEN;
+      if (recoveryToken && request.headers.get("x-vetta-recovery-token") === recoveryToken) {
+        const result = await recoverPendingMatrixDeliveries();
+        return NextResponse.json({ ok: true, recovery: result }, { headers: { "cache-control": "no-store" } });
+      }
+    }
+    const admin = await getAuthorizedAdmin("admin");
+    if (!admin) return NextResponse.json({ ok: false, code: "unauthorized" }, { status: 401 });
     if (body?.action === "recover_pending_matrix") {
       const result = await recoverPendingMatrixDeliveries();
       return NextResponse.json({ ok: true, recovery: result });
