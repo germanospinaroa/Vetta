@@ -14,5 +14,6 @@ export default async function ConfirmationPage({ searchParams }: { searchParams:
   const tokenValid = verifyConfirmationToken(token, params.code, config.cohort.id);
   const lead = tokenValid && params.code ? await findPersistedRegistration(params.code, config.cohort.id) : null;
   const whatsappHref = lead ? buildWhatsAppHref(config.whatsappNumber, lead.name, lead.registrationCode) : undefined;
-  return <ConfirmationSalesPage confirmed={Boolean(lead)} whatsappHref={whatsappHref} />;
+  const firstName = lead?.name.trim().split(/\s+/)[0];
+  return <ConfirmationSalesPage confirmed={Boolean(lead)} firstName={firstName} whatsappHref={whatsappHref} />;
 }

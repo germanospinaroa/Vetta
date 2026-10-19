@@ -11,7 +11,7 @@ const countries = getCountries()
   .map((code) => [code, regionNames.of(code) || code] as const)
   .sort((a, b) => a[1].localeCompare(b[1], "es"));
 
-type Result = { ok: true; registrationCode?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean } | { ok: false; message: string };
+type Result = { ok: true; registrationCode?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean; firstName?: string } | { ok: false; message: string };
 
 export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSuccess?: boolean }) {
   const [state, setState] = useState<FormState>("idle");
@@ -64,7 +64,8 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         return;
       }
       setState("success");
-      setResult(data);
+      const submittedName = typeof payload.name === "string" ? payload.name.trim().split(/\s+/)[0] : undefined;
+      setResult({ ...data, firstName: submittedName });
     } catch {
       setState("error");
       setResult({ ok: false, message: "No pudimos conectar con el registro. Revisa tu conexión e inténtalo de nuevo." });
@@ -75,9 +76,11 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
   if (state === "success" && result?.ok) {
     return (
       <div className="success-panel" role="status" aria-live="polite">
-        <span className="success-index">{result.existing ? "CONTINUAR REGISTRO" : "REGISTRO RECIBIDO"}</span>
-        <h2>{result.existing ? "Puedes continuar por WhatsApp." : "Tu registro está recibido."}</h2>
-        <p>{result.existing ? "Abre la conversación privada para continuar con tu inscripción." : "Ahora confirma tu acceso por WhatsApp para recibir las indicaciones de los encuentros."}</p>
+        <span className="success-index">REGISTRO RECIBIDO</span>
+        <h2>¡{result.firstName || "Ya"}, ya estás más cerca!</h2>
+        <p>Ahora vamos a darte acceso al grupo privado <strong>Antes de Emprender</strong>.</p>
+        <div className="success-highlight"><strong>Importante: debes estar en el grupo.</strong><br />Es nuestro <strong>único canal oficial</strong> para compartir los enlaces de acceso, recordatorios e información de la masterclass. <strong>Si no ingresas, no recibirás esa información.</strong></div>
+        <p>Pulsa el botón, envíanos el mensaje por WhatsApp y te compartiremos el enlace para unirte.</p>
         {result.registrationCode && <div className="registration-code"><span>Código</span><strong>{result.registrationCode}</strong></div>}
         {result.whatsappHref ? (
           <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => { const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
@@ -86,6 +89,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         ) : (
           <p className="config-note">Configuración TEST pendiente: el número oficial de WhatsApp todavía no está configurado.</p>
         )}
+        <p className="success-gift-note">🎁 Una vez dentro del grupo, responde <strong>LISTO</strong> en nuestro chat privado y recibirás <strong>EL FILTRO ANTES DEL SÍ</strong>.</p>
         <button className="text-button" type="button" onClick={() => { setState("idle"); setResult(null); }}>Registrar otra persona</button>
       </div>
     );
