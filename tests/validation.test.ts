@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
+import { extractEvolutionMessage, normalizeWhatsAppSender } from "../lib/whatsapp-evolution-parser";
 
 describe("VETTA registration contract", () => {
   it("normalizes an international WhatsApp number to E.164", () => {
@@ -23,5 +24,17 @@ describe("VETTA registration contract", () => {
   it("only accepts the three defined campaign territories", () => {
     expect(territoryFromCampaign("no_emprendas_todavia")).toBe("no_emprendas_todavia");
     expect(territoryFromCampaign("unknown")).toBeUndefined();
+  });
+
+  it("normalizes Evolution JIDs and extracts inbound text without storing payloads", () => {
+    expect(normalizeWhatsAppSender("573001234567@s.whatsapp.net")).toBe("573001234567");
+    const message = extractEvolutionMessage({
+      event: "messages.upsert",
+      data: { key: { id: "provider-1", remoteJid: "573001234567@s.whatsapp.net", fromMe: false }, message: { conversation: "LISTO" } },
+    });
+    expect(message.providerMessageId).toBe("provider-1");
+    expect(message.senderE164).toBe("573001234567");
+    expect(message.text).toBe("LISTO");
+    expect(message.fromMe).toBe(false);
   });
 });
