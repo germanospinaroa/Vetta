@@ -32,6 +32,19 @@ export async function POST(request: Request) {
   if (existingCorrection) return NextResponse.json({ ok: true, duplicate: true });
 
   const first = String(lead.name).trim().split(/\s+/)[0] || String(lead.name);
+  const requestBody = await request.json().catch(() => ({})) as { action?: string };
+  if (requestBody.action === "status") {
+    const { data: outbound } = await client.from("whatsapp_outbound_messages").select("status,provider_message_id,sent_at,error_code").eq("id", welcome.id).maybeSingle();
+    return NextResponse.json({ ok: true, status: outbound?.status || null, providerIdSuffix: outbound?.provider_message_id ? String(outbound.provider_message_id).slice(-8) : null, sentAt: outbound?.sent_at || null, errorCode: outbound?.error_code || null, correctionEvent: false });
+  }
+  if (requestBody.action === "finalize") {
+    if (welcome.status !== "sent") return NextResponse.json({ ok: false, code: "outbound_not_sent" }, { status: 409 });
+    const { data: outbound } = await client.from("whatsapp_outbound_messages").select("provider_message_id").eq("id", welcome.id).maybeSingle();
+    const { error: eventError } = await client.from("lead_events").insert({ lead_id: lead.id, cohort_id: cohortId, name: "welcome_link_correction_sent", properties: { source: "controlled_repair", recipient_name: first, provider_message_id_suffix: outbound?.provider_message_id ? String(outbound.provider_message_id).slice(-8) : null, audit_recovered: true } });
+    if (eventError) return NextResponse.json({ ok: false, code: "repair_audit_persistence_failed" }, { status: 503 });
+    return NextResponse.json({ ok: true, duplicate: false, finalized: true, providerIdSuffix: outbound?.provider_message_id ? String(outbound.provider_message_id).slice(-8) : null, recipientName: first });
+  }
+
   const text = `Corrección importante: este es el enlace correcto para ingresar al grupo privado Antes de Emprender:\n\n${groupLink}\n\nCuando estés dentro, vuelve a esta conversación y escribe **LISTO** para recibir tu regalo: **EL FILTRO ANTES DEL SÍ**. 🎁`;
   try {
     const response = await sendEvolutionText(lead.whatsapp_e164, text);
