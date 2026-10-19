@@ -9,14 +9,9 @@ export function AnalyticsConsent() {
   const [advertising, setAdvertising] = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setAnalytics(analyticsConsentGranted());
-      setAdvertising(advertisingConsentGranted());
-      setVisible(window.localStorage.getItem(ANALYTICS_CONSENT_KEY) === null || window.localStorage.getItem(ADVERTISING_CONSENT_KEY) === null);
-    }, 0);
     const open = () => { setAnalytics(analyticsConsentGranted()); setAdvertising(advertisingConsentGranted()); setVisible(true); };
     window.addEventListener("vetta:open-privacy-preferences", open);
-    return () => { window.clearTimeout(timer); window.removeEventListener("vetta:open-privacy-preferences", open); };
+    return () => window.removeEventListener("vetta:open-privacy-preferences", open);
   }, []);
 
   if (!visible) return null;
