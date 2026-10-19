@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { EventBeacon } from "@/components/event-beacon";
 import { StickySalesCta } from "@/components/sticky-sales-cta";
+import { SalesCta } from "@/components/sales-cta";
 import type { PublicCohort } from "@/lib/config";
 
 const questions = [
@@ -22,10 +23,7 @@ const criteria = [
 ] as const;
 
 export function SalesLanding({ cohort }: { cohort: PublicCohort }) {
-  const registrationOpen = cohort.status === "open";
-  const cta = (label: string, id?: string, className = "") => registrationOpen ? (
-    <a id={id} className={`sales-button ${className}`} href="/registro">{label} <span aria-hidden="true">→</span></a>
-  ) : null;
+  const cta = (label: string, id?: string, className = "") => <SalesCta label={label} id={id} className={className} />;
   return (
     <main className="sales-page">
       <EventBeacon name="landing_viewed" />
@@ -36,7 +34,7 @@ export function SalesLanding({ cohort }: { cohort: PublicCohort }) {
           <p className="sales-promise">Que una oportunidad suene increíble no significa que sea una buena decisión para ti.</p>
           <p className="sales-description">Aprende a identificar qué revisar antes de invertir tu tiempo, tu dinero y tu energía en un negocio.</p>
           <p className="sales-date"><strong>Masterclass en vivo</strong><br />Martes 20 y jueves 22 · 8:00 p. m.</p>
-          {cta("QUIERO REGISTRARME", "sales-hero-cta")}
+          {cta("QUIERO RESERVAR MI LUGAR", "sales-hero-cta")}
           <p className="sales-gift-note"><span aria-hidden="true">✦</span> Y además recibirás un regalo especial para ayudarte a evaluar mejor cualquier oportunidad de negocio.</p>
           <div className="sales-hero-image sales-hero-image-mobile"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(max-width: 700px) 100vw, 1px" /></div>
         </div>
@@ -53,16 +51,16 @@ export function SalesLanding({ cohort }: { cohort: PublicCohort }) {
         <div className="sales-section-intro sales-masterclass-intro"><h2 id="masterclass-title">Esta masterclass te ayudará a pensar diferente antes de tomar una decisión importante.</h2><p>En lugar de dejarte llevar solo por una buena presentación, aprenderás a mirar con más criterio lo que realmente hay detrás de una oportunidad.</p></div>
         <div className="sales-benefit-grid">{benefits.map(([title, text], index) => <article className="sales-benefit" key={title}><span className="sales-benefit-index">0{index + 1}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
         <p className="sales-reinforcement">Porque antes de emprender, lo importante no es emocionarte más. Es aprender a decidir mejor.</p>
-        {cta("QUIERO REGISTRARME", undefined, "sales-button-secondary")}
+        {cta("QUIERO APRENDER A ELEGIR MEJOR", undefined, "sales-button-secondary")}
       </div></section>
 
       <section className="sales-gift" aria-labelledby="gift-title"><div className="sales-shell sales-gift-grid">
         <div className="sales-gift-copy"><h2 id="gift-title">Además, al registrarte recibirás un regalo que te ayudará a llevar todo esto a la práctica.</h2><p className="sales-gift-name">EL FILTRO ANTES DEL SÍ.</p><p>Una herramienta práctica para ayudarte a evaluar oportunidades de negocio antes de comprometerte con ellas.</p><ul><li>Ordenar mejor tus ideas.</li><li>Analizar una oportunidad con más criterio.</li><li>Detectar lo que todavía necesitas investigar.</li><li>Comparar alternativas con una perspectiva más clara.</li></ul><p className="sales-gift-close">No es solo información. Es una herramienta para ayudarte a pensar mejor antes de decidir.</p></div>
         <div className="sales-device-wrap"><Image src="/images/filtro-antes-del-si-device.png" alt="Tablet con la Matriz para Evaluar Oportunidades" fill sizes="(max-width: 700px) 100vw, 48vw" /><div className="sales-matrix-screen"><div className="sales-matrix-screen-head"><span>MATRIZ PARA EVALUAR OPORTUNIDADES</span><b>01 / 10</b></div>{criteria.map(([title, question]) => <div className="sales-matrix-row" key={title}><strong>{title}</strong><span>{question}</span></div>)}</div></div>
-        <div className="sales-gift-cta"><h3>Tu próxima decisión merece algo más que entusiasmo.</h3><p>Regístrate en la masterclass y aprende a evaluar oportunidades con más criterio antes de decir que sí.</p><p className="sales-date sales-date-dark">Martes 20 y jueves 22 · 8:00 p. m.</p>{cta("QUIERO MI LUGAR Y MI REGALO", "sales-final-cta", "sales-button-gold")}<small>Recibirás tu regalo por WhatsApp después de completar el registro, ingresar al grupo privado y confirmar tu ingreso.</small></div>
+        <div className="sales-gift-cta"><h3>Tu próxima decisión merece algo más que entusiasmo.</h3><p>Regístrate en la masterclass y aprende a evaluar oportunidades con más criterio antes de decir que sí.</p><p className="sales-date sales-date-dark">Martes 20 y jueves 22 · 8:00 p. m.</p>{cta("QUIERO MI LUGAR Y EL FILTRO", "sales-final-cta", "sales-button-gold")}<small>Recibirás tu regalo por WhatsApp después de completar el registro, ingresar al grupo privado y confirmar tu ingreso.</small></div>
       </div></section>
       <footer className="sales-footer"><div className="sales-shell"><div><span className="sales-footer-title">NO EMPRENDAS TODAVÍA.</span><span>Masterclass en vivo · dos encuentros</span></div><nav aria-label="Enlaces legales"><Link href="/privacidad">Aviso de privacidad (borrador)</Link><Link href="/terminos">Términos (borrador)</Link></nav></div></footer>
-      <StickySalesCta enabled={registrationOpen} />
+      <StickySalesCta enabled />
     </main>
   );
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { eventSchema } from "@/lib/validation";
 import { persistPublicEvent } from "@/lib/persistence";
 
-const publicEvents = new Set(["landing_viewed", "registration_started", "registration_failed", "whatsapp_clicked", "matrix_opened"]);
+const publicEvents = new Set(["landing_viewed", "registration_started", "registration_failed", "whatsapp_clicked", "matrix_opened", "cta_clicked"]);
 
 export async function POST(request: Request) {
   try {

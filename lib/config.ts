@@ -42,4 +42,9 @@ export function getPublicConfig() {
   };
 }
 
+export function getQaPublicConfig() {
+  const config = getPublicConfig();
+  return { ...config, cohort: { ...config.cohort, status: "open" as const } };
+}
+
 export const isProductionReady = () => process.env.VETTA_ENV === "production" && !getPublicConfig().demoMode;
