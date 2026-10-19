@@ -41,25 +41,26 @@ export async function getAdminLeads(search = "") {
     actions.add(String(message.action));
     inboundMap.set(String(message.lead_id), actions);
   }
-  const outboundMap = new Map<string, Set<string>>();
+  const outboundMap = new Map<string, Map<string, string>>();
   for (const message of outbound || []) {
-    if (message.status !== "sent") continue;
-    const sent = outboundMap.get(String(message.lead_id)) || new Set<string>();
-    sent.add(String(message.kind));
-    outboundMap.set(String(message.lead_id), sent);
+    const statuses = outboundMap.get(String(message.lead_id)) || new Map<string, string>();
+    statuses.set(String(message.kind), String(message.status));
+    outboundMap.set(String(message.lead_id), statuses);
   }
   const leads = data.map((lead) => {
     const id = String(lead.id);
     const leadEvents = eventMap.get(id) || new Set<string>();
     const actions = inboundMap.get(id) || new Set<string>();
-    const sent = outboundMap.get(id) || new Set<string>();
+    const outboundStatus = outboundMap.get(id) || new Map<string, string>();
+    const matrixStatus = outboundStatus.get("matrix");
+    const inboundPending = actions.has("listo_pending_group_verification") || actions.has("matrix_delivery_failed");
     return {
       ...lead,
       whatsapp_status: [
         leadEvents.has("conversation_confirmed") ? "conversación" : null,
-        sent.has("welcome") ? "bienvenida" : null,
+        outboundStatus.get("welcome") === "sent" ? "bienvenida" : null,
         leadEvents.has("group_join_verified") ? "grupo verificado" : actions.has("group_join_declared") ? "LISTO pendiente" : null,
-        sent.has("matrix") ? "matriz enviada" : null,
+        matrixStatus === "sent" ? "matriz enviada" : matrixStatus === "pending" || inboundPending ? "matriz pendiente" : matrixStatus === "failed" ? "matriz fallida" : null,
       ].filter(Boolean).join(" · ") || "pendiente",
     };
   });
