@@ -16,6 +16,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
   const [state, setState] = useState<FormState>("idle");
   const [result, setResult] = useState<Result | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [country, setCountry] = useState("CO");
   const started = useRef(false);
 
   useEffect(() => {
@@ -89,16 +90,15 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
 
   return (
     <form id="demo-form" className="registration-form" onSubmit={submit} onFocus={markStarted}>
-      <div className="form-heading"><span className="section-kicker">Reserva tu lugar</span><h2>Empieza con<br /><em>mejores preguntas.</em></h2><p>Regístrate para vivir los dos encuentros. No necesitas tener una idea de negocio definida.</p></div>
       <div className="form-fields">
-        <div className="field"><label htmlFor="name">Nombre</label><input id="name" name="name" autoComplete="name" required placeholder="Tu nombre…" aria-describedby="name-help" /><span id="name-help" className="field-help">Solo para identificar tu registro.</span></div>
-        <div className="field"><label htmlFor="whatsapp">WhatsApp</label><input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" required placeholder="300 000 0000…" aria-describedby="whatsapp-help" /><span id="whatsapp-help" className="field-help">Incluye el número que revisas con más frecuencia.</span></div>
-        <div className="field-row"><div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" required placeholder="Tu ciudad…" /></div><div className="field"><label htmlFor="country">País</label><select id="country" name="country" defaultValue="CO" required>{countries.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div></div>
+        <div className="field"><label htmlFor="country">País</label><select id="country" name="country" value={country} onChange={(event) => setCountry(event.target.value)} required>{countries.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div>
+        <div className="field"><label htmlFor="name">Nombre</label><input id="name" name="name" autoComplete="name" required placeholder="Tu nombre" /></div>
+        <div className="field"><label htmlFor="whatsapp">WhatsApp</label><div className="phone-input"><span aria-hidden="true">+{getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}</span><input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="tel-national" required placeholder="300 000 0000" aria-label={`Número de WhatsApp sin prefijo para +${getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}`} /></div></div>
+        <div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" required placeholder="Tu ciudad" /></div>
         <label className="consent"><input type="checkbox" name="consent" required /><span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso de privacidad</a>.</span></label>
-        <label className="consent"><input type="checkbox" name="consent_marketing" /><span>Acepto recibir ocasionalmente información comercial relacionada. (Opcional)</span></label>
         {state === "error" && <p className="form-error" role="alert">{result && !result.ok ? result.message : "Revisa los campos y vuelve a intentarlo."}</p>}
         <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Guardando tu registro…" : "CONFIRMAR MI REGISTRO"}<span aria-hidden="true">↗</span></button>
-        <p className="form-footnote">La participación no implica comprar productos ni incorporarte a un negocio.</p>
+        <p className="form-footnote">Recibirás el regalo después de ingresar al grupo privado.</p>
       </div>
     </form>
   );
