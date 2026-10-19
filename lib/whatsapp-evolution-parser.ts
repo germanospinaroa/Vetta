@@ -58,10 +58,22 @@ export function extractEvolutionMessage(payload: unknown) {
   const data = asRecord(root.data ?? root.body ?? root);
   const key = asRecord(data.key ?? (asRecord(data.message).key));
   const message = asRecord(data.message ?? data);
+  const nestedMessage = asRecord(message.ephemeralMessage ?? message.viewOnceMessage ?? message.viewOnceMessageV2);
+  const messageBody = asRecord(nestedMessage.message ?? message);
   const remoteJid = key.remoteJid ?? data.remoteJid ?? data.sender;
   const sender = key.participant ?? data.participant ?? remoteJid;
-  const text = message.conversation
-    ?? asRecord(message.extendedTextMessage).text
+  const phoneCandidates = [
+    key.remoteJidAlt,
+    key.senderPn,
+    key.senderPN,
+    data.remoteJidAlt,
+    data.senderPn,
+    data.senderPN,
+    data.phoneNumber,
+    sender,
+  ];
+  const text = messageBody.conversation
+    ?? asRecord(messageBody.extendedTextMessage).text
     ?? data.text
     ?? data.body;
   const providerId = key.id ?? data.id ?? root.id;
@@ -71,7 +83,7 @@ export function extractEvolutionMessage(payload: unknown) {
     eventName: normalizeEvolutionEventName(root.event ?? root.type, "messages.upsert"),
     providerMessageId: String(providerId || fallback).slice(0, 240),
     senderJid: typeof sender === "string" ? sender : null,
-    senderE164: normalizeWhatsAppSender(sender) || normalizeWhatsAppSender(data.remoteJidAlt),
+    senderE164: phoneCandidates.map(normalizeWhatsAppSender).find(Boolean) || null,
     text: typeof text === "string" ? text.trim() : "",
     fromMe: key.fromMe === true || data.fromMe === true,
     remoteJid: typeof remoteJid === "string" ? remoteJid : null,

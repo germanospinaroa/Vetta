@@ -49,6 +49,15 @@ describe("VETTA registration contract", () => {
     expect(message.senderE164).toBe("+573001234567");
     expect(message.text).toBe("LISTO");
     expect(message.fromMe).toBe(false);
+    const lidMessage = extractEvolutionMessage({
+      event: "MESSAGES_UPSERT",
+      data: {
+        key: { id: "provider-lid-1", remoteJid: "123456789@lid", remoteJidAlt: "573001234567@s.whatsapp.net", fromMe: false },
+        message: { ephemeralMessage: { message: { conversation: "Hola" } } },
+      },
+    });
+    expect(lidMessage.senderE164).toBe("+573001234567");
+    expect(lidMessage.text).toBe("Hola");
   });
 
   it("accepts only the configured group and preserves unverifiable LIDs", () => {

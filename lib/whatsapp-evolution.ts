@@ -68,7 +68,17 @@ export async function processEvolutionMessage(payload: unknown) {
     return { action: verified ? "group_join_verified" as const : "group_event_unmatched" as const };
   }
   const message = extractEvolutionMessage(payload);
-  if (message.fromMe || message.eventName !== "messages.upsert" || !message.senderE164 || !message.text) return { action: "ignored" as const };
+  if (message.fromMe || message.eventName !== "messages.upsert") return { action: "ignored" as const };
+  if (!message.senderE164 || !message.text) {
+    console.warn("evolution_message_not_processable", {
+      eventName: message.eventName,
+      hasSenderJid: Boolean(message.senderJid),
+      hasRemoteJid: Boolean(message.remoteJid),
+      hasPhone: Boolean(message.senderE164),
+      hasText: Boolean(message.text),
+    });
+    return { action: "ignored_invalid_message" as const };
+  }
 
   const { data: existing } = await client.from("whatsapp_inbound_messages").select("id,action").eq("provider_message_id", message.providerMessageId).maybeSingle();
   if (existing) return { action: "duplicate" as const };
