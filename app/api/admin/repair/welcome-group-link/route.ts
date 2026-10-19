@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const { data: welcome } = await client.from("whatsapp_outbound_messages").select("id,status").eq("lead_id", lead.id).eq("kind", "welcome").maybeSingle();
   if (!welcome || welcome.status !== "sent") return NextResponse.json({ ok: false, code: "welcome_not_previously_sent" }, { status: 409 });
 
-  const { data: existingCorrection } = await client.from("lead_events").select("id").eq("lead_id", lead.id).eq("name", "welcome_link_correction_sent").limit(1).maybeSingle();
+  const { data: existingCorrection } = await client.from("lead_events").select("id").eq("lead_id", lead.id).eq("name", "whatsapp_clicked").contains("properties", { subtype: "welcome_link_correction_sent" }).limit(1).maybeSingle();
   if (existingCorrection) return NextResponse.json({ ok: true, duplicate: true });
 
   const first = String(lead.name).trim().split(/\s+/)[0] || String(lead.name);
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   if (requestBody.action === "finalize") {
     if (welcome.status !== "sent") return NextResponse.json({ ok: false, code: "outbound_not_sent" }, { status: 409 });
     const { data: outbound } = await client.from("whatsapp_outbound_messages").select("provider_message_id").eq("id", welcome.id).maybeSingle();
-    const { error: eventError } = await client.from("lead_events").insert({ lead_id: lead.id, cohort_id: cohortId, name: "welcome_link_correction_sent", properties: { source: "controlled_repair", recipient_name: first, provider_message_id_suffix: outbound?.provider_message_id ? String(outbound.provider_message_id).slice(-8) : null, audit_recovered: true } });
+    const { error: eventError } = await client.from("lead_events").insert({ lead_id: lead.id, cohort_id: cohortId, name: "whatsapp_clicked", properties: { source: "controlled_repair", subtype: "welcome_link_correction_sent", recipient_name: first, provider_message_id_suffix: outbound?.provider_message_id ? String(outbound.provider_message_id).slice(-8) : null, audit_recovered: true } });
     if (eventError) return NextResponse.json({ ok: false, code: "repair_audit_persistence_failed" }, { status: 503 });
     return NextResponse.json({ ok: true, duplicate: false, finalized: true, providerIdSuffix: outbound?.provider_message_id ? String(outbound.provider_message_id).slice(-8) : null, recipientName: first });
   }
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     const response = await sendEvolutionText(lead.whatsapp_e164, text);
     const providerId = response.key && typeof response.key === "object" ? String((response.key as Record<string, unknown>).id || "") : "";
     await client.from("whatsapp_outbound_messages").update({ status: "sent", provider_message_id: providerId || null, sent_at: new Date().toISOString(), error_code: null }).eq("id", welcome.id);
-    const { error: eventError } = await client.from("lead_events").insert({ lead_id: lead.id, cohort_id: cohortId, name: "welcome_link_correction_sent", properties: { source: "controlled_repair", recipient_name: first, provider_message_id_suffix: providerId.slice(-8) } });
+    const { error: eventError } = await client.from("lead_events").insert({ lead_id: lead.id, cohort_id: cohortId, name: "whatsapp_clicked", properties: { source: "controlled_repair", subtype: "welcome_link_correction_sent", recipient_name: first, provider_message_id_suffix: providerId.slice(-8) } });
     if (eventError) return NextResponse.json({ ok: false, code: "repair_audit_persistence_failed" }, { status: 503 });
     return NextResponse.json({ ok: true, duplicate: false, providerIdSuffix: providerId.slice(-8), recipientName: first });
   } catch {
