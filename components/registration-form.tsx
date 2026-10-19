@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { getCountries, getCountryCallingCode } from "libphonenumber-js";
 import { readAttribution } from "@/lib/tracking";
 
@@ -15,7 +14,6 @@ const countries = getCountries()
 type Result = { ok: true; registrationCode?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean } | { ok: false; message: string };
 
 export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSuccess?: boolean }) {
-  const router = useRouter();
   const [state, setState] = useState<FormState>("idle");
   const [result, setResult] = useState<Result | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -60,7 +58,9 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         return;
       }
       if (redirectOnSuccess && !data.existing && data.registrationCode) {
-        router.push(`/confirmacion?code=${encodeURIComponent(data.registrationCode)}` as never);
+        // Use a document navigation so the HttpOnly confirmation cookie, scoped
+        // to /confirmacion, is included in the first server-rendered request.
+        window.location.assign(`/confirmacion?code=${encodeURIComponent(data.registrationCode)}`);
         return;
       }
       setState("success");
