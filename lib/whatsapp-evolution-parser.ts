@@ -2,6 +2,10 @@ import { createHash } from "node:crypto";
 
 const INSTANCE = "momentum";
 
+function normalizeEvolutionEventName(value: unknown, fallback = "") {
+  return String(value || fallback).trim().toLowerCase().replace(/[_-]+/g, ".");
+}
+
 export function normalizeWhatsAppSender(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -34,7 +38,7 @@ export function extractEvolutionGroupData(payload: unknown) {
   const groupJid = data.id ?? data.groupJid ?? data.remoteJid;
   const providerId = data.id && data.timestamp ? `${String(data.id)}:${String(data.timestamp)}` : root.id ?? data.id;
   return {
-    eventName: String(root.event ?? root.type ?? "").toLowerCase(),
+    eventName: normalizeEvolutionEventName(root.event ?? root.type),
     groupJid: typeof groupJid === "string" ? groupJid : null,
     providerId: typeof providerId === "string" ? providerId : null,
     participants: participants.map(extractEvolutionParticipant),
@@ -64,7 +68,7 @@ export function extractEvolutionMessage(payload: unknown) {
   const timestamp = key.id ? "" : String(data.messageTimestamp ?? data.timestamp ?? "");
   const fallback = createHash("sha256").update(`${INSTANCE}|${String(sender)}|${timestamp}|${String(text)}`).digest("hex");
   return {
-    eventName: String(root.event ?? root.type ?? "messages.upsert").toLowerCase(),
+    eventName: normalizeEvolutionEventName(root.event ?? root.type, "messages.upsert"),
     providerMessageId: String(providerId || fallback).slice(0, 240),
     senderJid: typeof sender === "string" ? sender : null,
     senderE164: normalizeWhatsAppSender(sender) || normalizeWhatsAppSender(data.remoteJidAlt),

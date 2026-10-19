@@ -41,9 +41,10 @@ describe("VETTA registration contract", () => {
     expect(extractEvolutionParticipant({ id: "12345@lid", number: "573001234567" }).phoneE164).toBe("+573001234567");
     expect(extractEvolutionParticipant({ id: "12345@lid" }).phoneE164).toBeNull();
     const message = extractEvolutionMessage({
-      event: "messages.upsert",
+      event: "MESSAGES_UPSERT",
       data: { key: { id: "provider-1", remoteJid: "573001234567@s.whatsapp.net", fromMe: false }, message: { conversation: "LISTO" } },
     });
+    expect(message.eventName).toBe("messages.upsert");
     expect(message.providerMessageId).toBe("provider-1");
     expect(message.senderE164).toBe("+573001234567");
     expect(message.text).toBe("LISTO");
