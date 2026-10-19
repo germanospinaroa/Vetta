@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
-import { extractEvolutionMessage, normalizeWhatsAppSender } from "../lib/whatsapp-evolution-parser";
+import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender } from "../lib/whatsapp-evolution-parser";
 
 describe("VETTA registration contract", () => {
   it("normalizes an international WhatsApp number to E.164", () => {
@@ -27,14 +27,27 @@ describe("VETTA registration contract", () => {
   });
 
   it("normalizes Evolution JIDs and extracts inbound text without storing payloads", () => {
-    expect(normalizeWhatsAppSender("573001234567@s.whatsapp.net")).toBe("573001234567");
+    expect(normalizeWhatsAppSender("573001234567@s.whatsapp.net")).toBe("+573001234567");
+    expect(normalizeWhatsAppSender("573001234567@lid")).toBeNull();
+    expect(extractEvolutionParticipant({ id: "12345@lid", phoneNumber: "573001234567" })).toEqual({ phoneE164: "+573001234567", id: "12345@lid", jid: null });
+    expect(extractEvolutionParticipant({ id: "12345@lid", number: "573001234567" }).phoneE164).toBe("+573001234567");
+    expect(extractEvolutionParticipant({ id: "12345@lid" }).phoneE164).toBeNull();
     const message = extractEvolutionMessage({
       event: "messages.upsert",
       data: { key: { id: "provider-1", remoteJid: "573001234567@s.whatsapp.net", fromMe: false }, message: { conversation: "LISTO" } },
     });
     expect(message.providerMessageId).toBe("provider-1");
-    expect(message.senderE164).toBe("573001234567");
+    expect(message.senderE164).toBe("+573001234567");
     expect(message.text).toBe("LISTO");
     expect(message.fromMe).toBe(false);
+  });
+
+  it("accepts only the configured group and preserves unverifiable LIDs", () => {
+    const payload = { event: "GROUP_PARTICIPANTS_UPDATE", data: { id: "120363413717481086@g.us", participants: [{ id: "987654@lid" }, { id: "12345@lid", phoneNumber: "573001234567" }] } };
+    const group = extractEvolutionGroupData(payload);
+    expect(matchesConfiguredEvolutionGroup(group.groupJid, "120363413717481086@g.us")).toBe(true);
+    expect(matchesConfiguredEvolutionGroup(group.groupJid, "120363430193664827@g.us")).toBe(false);
+    expect(group.participants[0]?.phoneE164).toBeNull();
+    expect(group.participants[1]?.phoneE164).toBe("+573001234567");
   });
 });

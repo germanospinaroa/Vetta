@@ -2,31 +2,10 @@ import { createHash } from "node:crypto";
 import { getPublicConfig } from "@/lib/config";
 import { sendEvolutionText } from "@/lib/evolution";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { extractEvolutionMessage, normalizeWhatsAppSender } from "@/lib/whatsapp-evolution-parser";
+import { extractEvolutionGroupData, extractEvolutionMessage, matchesConfiguredEvolutionGroup } from "@/lib/whatsapp-evolution-parser";
 
 const COHORT_ID = process.env.NEXT_PUBLIC_ACTIVE_COHORT_ID;
 const INSTANCE = process.env.EVOLUTION_INSTANCE || "momentum";
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" ? value as Record<string, unknown> : {};
-}
-
-function groupEventData(payload: unknown) {
-  const root = asRecord(payload);
-  const data = asRecord(root.data ?? root.body ?? root);
-  const participants = Array.isArray(data.participants) ? data.participants : [];
-  const groupJid = data.id ?? data.groupJid ?? data.remoteJid;
-  const providerId = data.id && data.timestamp ? `${String(data.id)}:${String(data.timestamp)}` : root.id ?? data.id;
-  return {
-    eventName: String(root.event ?? root.type ?? "").toLowerCase(),
-    groupJid: typeof groupJid === "string" ? groupJid : null,
-    providerId: typeof providerId === "string" ? providerId : null,
-    participants: participants.map((participant) => {
-      const item = asRecord(participant);
-      return normalizeWhatsAppSender(item.id ?? item.jid ?? item.phone ?? item.number);
-    }).filter((phone): phone is string => Boolean(phone)),
-  };
-}
 
 function firstName(name: string) {
   return name.trim().split(/\s+/)[0] || name;
@@ -63,15 +42,16 @@ async function sendOnce(client: NonNullable<ReturnType<typeof createSupabaseAdmi
 export async function processEvolutionMessage(payload: unknown) {
   const client = createSupabaseAdminClient();
   if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
-  const group = groupEventData(payload);
+  const group = extractEvolutionGroupData(payload);
   const configuredGroup = process.env.VETTA_GROUP_JID?.trim();
-  if (configuredGroup && group.groupJid === configuredGroup && group.participants.length > 0 && group.eventName.includes("group")) {
+  if (matchesConfiguredEvolutionGroup(group.groupJid, configuredGroup) && group.participants.length > 0 && group.eventName.includes("group")) {
     let verified = 0;
-    for (const phone of group.participants) {
-      const { data: lead } = await client.from("leads").select("id,name,whatsapp_e164").eq("cohort_id", COHORT_ID).eq("whatsapp_e164", phone).maybeSingle();
+    for (const participant of group.participants) {
+      if (!participant.phoneE164) continue;
+      const { data: lead } = await client.from("leads").select("id,name,whatsapp_e164").eq("cohort_id", COHORT_ID).eq("whatsapp_e164", participant.phoneE164).maybeSingle();
       if (!lead) continue;
-      const providerId = group.providerId || createHash("sha256").update(`${group.groupJid}|${phone}|${group.eventName}`).digest("hex");
-      const { error: inserted } = await client.from("whatsapp_inbound_messages").insert({ provider_message_id: `${providerId}:${phone}`, instance_name: INSTANCE, sender_e164: phone, lead_id: lead.id, event_name: group.eventName, message_kind: "group_participant", action: "group_join_verified", processed_at: new Date().toISOString() });
+      const providerId = group.providerId || createHash("sha256").update(`${group.groupJid}|${participant.phoneE164}|${group.eventName}`).digest("hex");
+      const { error: inserted } = await client.from("whatsapp_inbound_messages").insert({ provider_message_id: `${providerId}:${participant.phoneE164}`, instance_name: INSTANCE, sender_jid: participant.id || participant.jid, sender_e164: participant.phoneE164, lead_id: lead.id, event_name: group.eventName, message_kind: "group_participant", action: "group_join_verified", processed_at: new Date().toISOString() });
       if (inserted?.code === "23505") continue;
       if (inserted) throw new Error("group_event_persistence_failed");
       await recordEvent(client, lead.id, "group_join_verified", { source: "evolution", automated: true });

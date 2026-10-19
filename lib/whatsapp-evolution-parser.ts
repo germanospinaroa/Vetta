@@ -4,9 +4,45 @@ const INSTANCE = "momentum";
 
 export function normalizeWhatsAppSender(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  const raw = value.replace(/@(?:s\.whatsapp\.net|c\.us|lid)$/i, "").replace(/:[^@-]+$/, "");
+  const trimmed = value.trim();
+  if (/@lid$/i.test(trimmed)) return null;
+  const raw = trimmed.replace(/@(?:s\.whatsapp\.net|c\.us)$/i, "").replace(/:[^@-]+$/, "");
   const digits = raw.replace(/\D/g, "");
-  return digits.length >= 8 && digits.length <= 15 ? digits : null;
+  return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : null;
+}
+
+export type EvolutionParticipantIdentity = {
+  phoneE164: string | null;
+  id: string | null;
+  jid: string | null;
+};
+
+export function extractEvolutionParticipant(value: unknown): EvolutionParticipantIdentity {
+  const item = asRecord(value);
+  const id = typeof item.id === "string" ? item.id : null;
+  const jid = typeof item.jid === "string" ? item.jid : null;
+  const phoneE164 = normalizeWhatsAppSender(item.phoneNumber)
+    || normalizeWhatsAppSender(item.number)
+    || normalizeWhatsAppSender(item.phone);
+  return { phoneE164, id, jid };
+}
+
+export function extractEvolutionGroupData(payload: unknown) {
+  const root = asRecord(payload);
+  const data = asRecord(root.data ?? root.body ?? root);
+  const participants = Array.isArray(data.participants) ? data.participants : [];
+  const groupJid = data.id ?? data.groupJid ?? data.remoteJid;
+  const providerId = data.id && data.timestamp ? `${String(data.id)}:${String(data.timestamp)}` : root.id ?? data.id;
+  return {
+    eventName: String(root.event ?? root.type ?? "").toLowerCase(),
+    groupJid: typeof groupJid === "string" ? groupJid : null,
+    providerId: typeof providerId === "string" ? providerId : null,
+    participants: participants.map(extractEvolutionParticipant),
+  };
+}
+
+export function matchesConfiguredEvolutionGroup(groupJid: string | null, configuredGroup: string | undefined) {
+  return Boolean(groupJid && configuredGroup?.trim() && groupJid === configuredGroup.trim());
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
