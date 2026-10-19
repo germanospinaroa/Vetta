@@ -28,6 +28,33 @@ export async function persistRegistration(input: RegistrationInput, normalizedPh
   return { registrationCode: lead.registration_code, name: lead.name };
 }
 
+export async function persistQaRegistration(input: RegistrationInput, normalizedPhone: string) {
+  const client = createSupabaseAdminClient();
+  if (!client) return null;
+  const cohort = getPublicConfig().cohort;
+  const { data: cohortRow, error: cohortError } = await client.from("cohorts").select("id,status").eq("id", cohort.id).maybeSingle();
+  if (cohortError || !cohortRow) throw new Error("qa_cohort_not_found");
+  const { data: existing, error: existingError } = await client.from("leads").select("id").eq("cohort_id", cohort.id).eq("whatsapp_e164", normalizedPhone).maybeSingle();
+  if (existingError) throw new Error("registration_duplicate_check_failed");
+  if (existing) throw new Error("duplicate_registration");
+  const { data: lead, error } = await client.from("leads").insert({
+    cohort_id: cohort.id,
+    registration_code: `QA-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+    name: input.name,
+    whatsapp_e164: normalizedPhone,
+    city: input.city,
+    country_code: input.country,
+  }).select("id,registration_code,name").single();
+  if (error || !lead) throw new Error("registration_persistence_failed");
+  const { error: attributionError } = await client.from("campaign_attribution").insert({ lead_id: lead.id, utm_campaign: "vetta_qa_whatsapp", territory: null });
+  if (attributionError) throw new Error("attribution_persistence_failed");
+  const { error: consentError } = await client.from("consent_records").insert({ lead_id: lead.id, consent_version: input.consentVersion, consent_type: "experience_communications_qa" });
+  if (consentError) throw new Error("consent_persistence_failed");
+  const { error: eventError } = await client.from("lead_events").insert({ lead_id: lead.id, cohort_id: cohort.id, name: "registration_submitted", properties: { form_version: "qa-whatsapp-v1", qa: true, cohort_status_at_creation: cohortRow.status } });
+  if (eventError) throw new Error("event_persistence_failed");
+  return { registrationCode: lead.registration_code, name: lead.name };
+}
+
 export async function findPersistedRegistration(registrationCode: string, cohortId: string) {
   const client = createSupabaseAdminClient();
   if (!client) return null;
