@@ -4,63 +4,45 @@ import { EventBeacon } from "@/components/event-beacon";
 import { StickySalesCta } from "@/components/sticky-sales-cta";
 import { SalesCta } from "@/components/sales-cta";
 import type { PublicCohort } from "@/lib/config";
+import teamImage from "../Team.png";
 
 const questions = [
-  ["Es una gran oportunidad", "¿Qué tendría que comprobar antes de decir que sí?"],
-  ["No necesitas invertir mucho", "¿Cuánto dinero requiere realmente comenzar y sostenerlo?"],
-  ["Tiene muchísimo potencial", "¿Qué evidencia real existe de que puede funcionar?"],
+  ["Es una inversión pequeña", "¿Cuánto dinero necesito realmente para empezar y sostenerlo?"],
+  ["Puedes hacerlo en tu tiempo libre", "¿Qué tendría que hacer cada semana para ponerlo a funcionar?"],
+  ["Tiene muchísimo potencial", "¿Qué evidencia demuestra que existe una demanda real?"],
 ] as const;
+
 const benefits = [
-  ["MÁS CLARIDAD", "Para analizar una oportunidad antes de comprometerte."],
-  ["MEJORES PREGUNTAS", "Para identificar riesgos, vacíos de información y señales importantes."],
-  ["MÁS CRITERIO", "Para comparar alternativas sin dejarte llevar únicamente por la emoción."],
-  ["DECISIONES MÁS CONSCIENTES", "Para reconocer cuándo avanzar, cuándo investigar más y cuándo es mejor decir que no."],
-] as const;
-const criteria = [
-  ["Capital necesario", "¿Qué debes comprometer antes de validar la oportunidad?"],
-  ["Demanda verificable", "¿Qué evidencia existe de que alguien necesita o compra esto?"],
-  ["Validación previa", "¿Qué puedes comprobar antes de comprometerte de verdad?"],
+  ["Mira más allá de una buena presentación.", "Descubre qué preguntas te ayudan a entender lo que realmente implica una oportunidad."],
+  ["Reconoce lo que merece tu atención.", "Aprende a observar factores que muchas veces pasan desapercibidos cuando algo parece prometedor."],
+  ["Avanza con una perspectiva diferente.", "No se trata de decirle que sí a todo, ni de renunciar por miedo. Se trata de aprender a elegir con mejores fundamentos."],
 ] as const;
 
 export function SalesLanding({ cohort }: { cohort: PublicCohort }) {
   const cta = (label: string, id?: string, className = "") => <SalesCta label={label} id={id} className={className} />;
+  const canRegister = cohort.status === "open";
+
   return (
-    <main className="sales-page">
+    <main className="sales-page sales-v2">
       <EventBeacon name="landing_viewed" />
       <a className="sales-skip" href="#sales-main">Saltar al contenido</a>
-      <section className="sales-hero" id="sales-main"><div className="sales-shell sales-hero-grid">
-        <div className="sales-hero-copy">
-          <h1>NO EMPRENDAS <span>TODAVÍA.</span></h1>
-          <p className="sales-promise">Que una oportunidad suene increíble no significa que sea una buena decisión para ti.</p>
-          <p className="sales-description">Aprende a identificar qué revisar antes de invertir tu tiempo, tu dinero y tu energía en un negocio.</p>
-          <p className="sales-date"><strong>Masterclass en vivo</strong><br />Martes 20 y jueves 22 · 8:00 p. m.</p>
-          {cta("QUIERO RESERVAR MI LUGAR", "sales-hero-cta")}
-          <p className="sales-gift-note"><span aria-hidden="true">✦</span><span>Y además recibirás un regalo especial para ayudarte a evaluar mejor cualquier oportunidad de negocio.</span></p>
-          <div className="sales-hero-image sales-hero-image-mobile"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(max-width: 700px) 100vw, 1px" /></div>
-        </div>
-        <div className="sales-hero-image sales-hero-image-desktop"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(min-width: 900px) 48vw, 1px" /></div>
-      </div></section>
+      <header className="sales-v2-header"><div className="sales-shell sales-v2-header-inner"><Link className="sales-v2-wordmark" href="#sales-main">NO EMPRENDAS <span>TODAVÍA.</span></Link>{canRegister ? <Link className="sales-v2-header-cta" href="/registro">Reservar mi lugar <span aria-hidden="true">→</span></Link> : <span className="sales-v2-date-label">20 Y 22 DE OCTUBRE</span>}</div></header>
 
-      <section className="sales-identification" aria-labelledby="identification-title"><div className="sales-shell">
-        <div className="sales-section-intro"><h2 id="identification-title">Has considerado distintas oportunidades… pero eso no significa que sea fácil elegir bien.</h2><p>Tal vez ya has pensado en una franquicia, un negocio digital, una tienda online o alguna otra oportunidad que parecía prometedora.</p><p>Y mientras más opciones aparecen, más difícil se vuelve tomar una decisión con seguridad.</p><p>Porque una cosa es escuchar una propuesta atractiva.</p><p className="sales-intro-strong">Y otra muy distinta es saber evaluarla de verdad.</p></div>
-        <div className="sales-question-list">{questions.map(([promise, question], index) => <article className="sales-question-pair" key={promise}><div><span className="sales-question-label">TE DICEN</span><p className="sales-promise-quote">«{promise}»</p></div><span className="sales-question-connector" aria-hidden="true">→</span><div><span className="sales-question-label sales-question-label-dark">TÚ TE PREGUNTAS</span><p className="sales-smart-question">{question}</p></div><span className="sales-question-index">0{index + 1}</span></article>)}</div>
-        <p className="sales-identification-close">No necesitas conocer más oportunidades. Necesitas aprender a distinguir cuáles merecen tu sí.</p>
-      </div></section>
+      <section className="sales-v2-hero" id="sales-main" aria-labelledby="sales-v2-hero-title"><div className="sales-shell sales-v2-hero-grid"><div className="sales-v2-hero-copy"><p className="sales-v2-eyebrow">MENTORÍA EN VIVO · DOS ENCUENTROS</p><h1 id="sales-v2-hero-title">NO EMPRENDAS <span>TODAVÍA.</span></h1><p className="sales-v2-promise">La próxima oportunidad podría ser buena. ¿Sabrías reconocerla?</p><p className="sales-v2-support">No todas las oportunidades son para todo el mundo. Aprende a mirar más allá de lo que suena bien y a reconocer qué merece realmente tu tiempo, tu energía y tu dinero.</p><div className="sales-v2-date"><strong>20 y 22 de octubre de 2026</strong><span>8:00 p. m. · Hora de Colombia</span></div>{canRegister ? cta("QUIERO RESERVAR MI LUGAR", "sales-hero-cta", "sales-v2-button") : <span className="sales-v2-status">Las inscripciones se habilitarán cuando la edición esté confirmada.</span>}<p className="sales-v2-gift-note"><span aria-hidden="true">✦</span>Además, recibirás una herramienta práctica para evaluar mejor cualquier oportunidad.</p><div className="sales-v2-hero-mobile-image"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="100vw" /></div></div><div className="sales-v2-hero-desktop-image"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(min-width: 900px) 48vw, 1px" /></div></div></section>
 
-      <section className="sales-masterclass" aria-labelledby="masterclass-title"><div className="sales-shell">
-        <div className="sales-section-intro sales-masterclass-intro"><h2 id="masterclass-title">Esta masterclass te ayudará a pensar diferente antes de tomar una decisión importante.</h2><p>En lugar de dejarte llevar solo por una buena presentación, aprenderás a mirar con más criterio lo que realmente hay detrás de una oportunidad.</p></div>
-        <div className="sales-benefit-grid">{benefits.map(([title, text], index) => <article className="sales-benefit" key={title}><span className="sales-benefit-index">0{index + 1}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
-        <p className="sales-reinforcement">Porque antes de emprender, lo importante no es emocionarte más. Es aprender a decidir mejor.</p>
-        {cta("QUIERO APRENDER A ELEGIR MEJOR", undefined, "sales-button-secondary")}
-      </div></section>
+      <section className="sales-v2-identification" aria-labelledby="sales-v2-identification-title"><div className="sales-shell"><div className="sales-v2-section-heading"><p className="sales-v2-section-number">01 / ANTES DE DECIDIR</p><h2 id="sales-v2-identification-title">Todo suena bien en la presentación. ¿Y después?</h2><p>Antes de entusiasmarte con una oportunidad, hay preguntas que vale la pena hacer.</p></div><div className="sales-v2-question-list">{questions.map(([promise, question], index) => <article className="sales-v2-question" key={promise}><div><span>TE DICEN</span><p>«{promise}»</p></div><div className="sales-v2-question-arrow" aria-hidden="true">→</div><div><span>QUÉ REVISAR</span><strong>{question}</strong></div><b aria-hidden="true">0{index + 1}</b></article>)}</div></div></section>
 
-      <section className="sales-gift" aria-labelledby="gift-title"><div className="sales-shell sales-gift-grid">
-        <div className="sales-gift-copy"><h2 id="gift-title">Además, al registrarte recibirás un regalo que te ayudará a llevar todo esto a la práctica.</h2><p className="sales-gift-name">EL FILTRO ANTES DEL SÍ.</p><p>Una herramienta práctica para ayudarte a evaluar oportunidades de negocio antes de comprometerte con ellas.</p><ul><li>Ordenar mejor tus ideas.</li><li>Analizar una oportunidad con más criterio.</li><li>Detectar lo que todavía necesitas investigar.</li><li>Comparar alternativas con una perspectiva más clara.</li></ul><p className="sales-gift-close">No es solo información. Es una herramienta para ayudarte a pensar mejor antes de decidir.</p></div>
-        <div className="sales-device-wrap"><Image src="/images/filtro-antes-del-si-device.png" alt="Tablet con la Matriz para Evaluar Oportunidades" fill sizes="(max-width: 700px) 100vw, 48vw" /><div className="sales-matrix-screen"><div className="sales-matrix-screen-head"><span>MATRIZ PARA EVALUAR OPORTUNIDADES</span><b>01 / 10</b></div>{criteria.map(([title, question]) => <div className="sales-matrix-row" key={title}><strong>{title}</strong><span>{question}</span></div>)}</div></div>
-        <div className="sales-gift-cta"><h3>Tu próxima decisión merece algo más que entusiasmo.</h3><p>Regístrate en la masterclass y aprende a evaluar oportunidades con más criterio antes de decir que sí.</p><p className="sales-date sales-date-dark">Martes 20 y jueves 22 · 8:00 p. m.</p>{cta("QUIERO MI LUGAR Y EL FILTRO", "sales-final-cta", "sales-button-gold")}<small>Recibirás tu regalo por WhatsApp después de completar el registro, ingresar al grupo privado y confirmar tu ingreso.</small></div>
-      </div></section>
-      <footer className="sales-footer"><div className="sales-shell"><div><span className="sales-footer-title">NO EMPRENDAS TODAVÍA.</span><span>Masterclass en vivo · dos encuentros</span></div><nav aria-label="Enlaces legales"><Link href="/privacidad">Aviso de privacidad (borrador)</Link><Link href="/terminos">Términos (borrador)</Link></nav></div></footer>
-      <StickySalesCta enabled />
+      <section className="sales-v2-value" aria-labelledby="sales-v2-value-title"><div className="sales-shell"><div className="sales-v2-section-heading sales-v2-value-heading"><p className="sales-v2-section-number">02 / UNA NUEVA PERSPECTIVA</p><h2 id="sales-v2-value-title">Aprender a elegir también es una forma de avanzar.</h2></div><div className="sales-v2-benefits">{benefits.map(([title, text], index) => <article key={title} className="sales-v2-benefit"><span>0{index + 1}</span><h3>{title}</h3><p>{text}</p></article>)}</div><p className="sales-v2-value-close">Porque antes de emprender, lo importante no es emocionarte más. Es aprender a decidir mejor.</p>{canRegister && cta("QUIERO RESERVAR MI LUGAR", undefined, "sales-v2-button sales-v2-button-dark")}</div></section>
+
+      <section className="sales-v2-experience" aria-labelledby="sales-v2-experience-title"><div className="sales-shell"><div className="sales-v2-section-heading"><p className="sales-v2-section-number">03 / LA EXPERIENCIA</p><h2 id="sales-v2-experience-title">Dos encuentros. Una experiencia que vale la pena vivir completa.</h2><p>NO EMPRENDAS TODAVÍA está diseñada como una experiencia en dos encuentros conectados. Cada uno forma parte de un recorrido que queremos que vivas de principio a fin.</p></div><div className="sales-v2-dates"><div><span>Martes</span><strong>20</strong><small>de octubre</small></div><div className="sales-v2-date-line" aria-hidden="true"><i /><b>+</b><i /></div><div><span>Jueves</span><strong>22</strong><small>de octubre</small></div></div><div className="sales-v2-experience-footer"><p>8:00 p. m. · Hora de Colombia</p><strong>Reserva ambas fechas. Ven con la mente abierta.</strong></div></div></section>
+
+      <section className="sales-v2-gift" aria-labelledby="sales-v2-gift-title"><div className="sales-shell sales-v2-gift-grid"><div className="sales-v2-gift-copy"><p className="sales-v2-section-number">04 / TU REGALO</p><h2 id="sales-v2-gift-title">EL FILTRO ANTES DEL SÍ</h2><p className="sales-v2-gift-promise">Diez criterios para mirar una oportunidad con otros ojos antes de comprometerte.</p><p>Una herramienta interactiva para organizar lo que sabes, identificar lo que todavía necesitas comprobar y evaluar con mayor claridad tus alternativas.</p><ul><li>Ordena lo que sabes.</li><li>Detecta lo que necesitas investigar.</li><li>Compara alternativas con más claridad.</li></ul><p className="sales-v2-gift-delivery">Después de registrarte, continúa por WhatsApp, ingresa al grupo privado Antes de Emprender y responde LISTO en el chat individual para recibir tu filtro.</p></div><div className="sales-v2-filter-demo" aria-label="Demostración de El filtro antes del sí"><div className="sales-v2-filter-head"><span>EL FILTRO ANTES DEL SÍ</span><b>01 / 10</b></div><p>La inversión es baja.</p><strong>¿Cuánto dinero necesitarías antes de conseguir tus primeros clientes?</strong><div className="sales-v2-filter-rule" /><small>Una buena pregunta puede cambiar por completo cómo ves una oportunidad.</small></div><div className="sales-v2-gift-close"><h3>Tu próxima oportunidad merece algo más que entusiasmo.</h3><p>Regístrate y aprende a mirar las cosas desde una perspectiva diferente.</p><p className="sales-v2-date-dark">20 y 22 de octubre de 2026 · 8:00 p. m. Colombia</p>{canRegister && cta("QUIERO MI LUGAR Y EL FILTRO", "sales-final-cta", "sales-v2-button sales-v2-button-gold")}</div></div></section>
+
+      <section className="sales-v2-facilitators" aria-labelledby="sales-v2-facilitators-title"><div className="sales-shell"><div className="sales-v2-section-heading"><p className="sales-v2-section-number">05 / QUIÉNES TE ACOMPAÑAN</p><h2 id="sales-v2-facilitators-title">CUATRO VOCES. UNA EXPERIENCIA QUE PUEDE CAMBIAR TU PERSPECTIVA.</h2></div><div className="sales-v2-team-image"><Image src={teamImage} alt="Andrés Jaramillo, Marcela Cruz, Alejandra Arévalo y Germán Ospina" sizes="(max-width: 700px) 100vw, 1200px" /></div><p className="sales-v2-team-copy">No venimos a darte otra charla motivacional. Venimos a compartir experiencias reales, cuestionar lo que muchos dan por sentado y mostrarte que, cuando se trata de emprender, hay cosas que vale la pena descubrir antes de decidir.</p><p className="sales-v2-team-names">Andrés Jaramillo · Marcela Cruz · Alejandra Arévalo · Germán Ospina</p></div></section>
+
+      <section className="sales-v2-close" aria-labelledby="sales-v2-close-title"><div className="sales-shell"><h2 id="sales-v2-close-title">Tu próxima oportunidad merece algo más que entusiasmo.</h2><p>Antes de decidir dónde invertir tu tiempo, energía y dinero, date la oportunidad de mirar las cosas desde una perspectiva diferente.</p><strong>Dos encuentros en vivo. Una experiencia para vivir completa.</strong><p className="sales-v2-close-date">20 y 22 de octubre de 2026 · 8:00 p. m. · Hora de Colombia</p>{canRegister && cta("QUIERO RESERVAR MI LUGAR", undefined, "sales-v2-button")}</div></section>
+
+      <footer className="sales-footer sales-v2-footer"><div className="sales-shell"><div><span className="sales-footer-title">NO EMPRENDAS TODAVÍA.</span><span>Mentoría en vivo · dos encuentros</span></div><nav aria-label="Enlaces legales"><Link href="/privacidad">Aviso de privacidad (borrador)</Link><Link href="/terminos">Términos (borrador)</Link></nav></div></footer><StickySalesCta enabled={canRegister} />
     </main>
   );
 }

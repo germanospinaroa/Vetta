@@ -1,0 +1,21 @@
+{
+  "contract": "Public landing optimization for NO EMPRENDAS TODAVÍA; preserve existing registration and WhatsApp integrations.",
+  "targetViewports": ["320x740", "375x812", "390x844", "430x932", "1440x900"],
+  "accessibility": {"status": "pass", "evidence": "Semantic headings, labelled sections, image alt text, keyboard-focus styles and reduced-motion CSS were inspected in the rendered page."},
+  "responsive": {"status": "pass", "evidence": "Chrome CDP checks reported no horizontal overflow at all five target viewports; six /registro CTAs and Team.png were present."},
+  "contentStates": {
+    "loading": {"status": "not-applicable", "reason": "Static public landing inspection."},
+    "empty": {"status": "not-applicable", "reason": "No empty state is part of the public landing contract."},
+    "error": {"status": "not-applicable", "reason": "No error state was triggered during public landing inspection."},
+    "partial": {"status": "not-applicable", "reason": "No partial state is part of the public landing contract."},
+    "success": {"status": "pass", "evidence": "Production rendered the full landing with hero, comparisons, benefits, dates, gift demo, facilitators and closing CTA."},
+    "permission": {"status": "not-applicable", "reason": "Public landing does not require permission."}
+  },
+  "renderedEvidence": [
+    {"viewport": "320x740", "artifact": "landing-320x740.png", "observation": "No horizontal overflow; CTA, hero copy and image render within the viewport."},
+    {"viewport": "375x812", "artifact": "landing-375x812.png", "observation": "Mobile layout remains single-column with visible CTA and intact typography."},
+    {"viewport": "390x844", "artifact": "landing-390x844.png", "observation": "Primary mobile viewport checked with no horizontal overflow and Team.png loaded."},
+    {"viewport": "430x932", "artifact": "landing-430x932.png", "observation": "Expanded mobile layout checked with no overflow and all key sections rendered."},
+    {"viewport": "1440x900", "artifact": "landing-1440x900.png", "observation": "Desktop layout checked with grid composition and six registration CTAs."}
+  ]
+}
