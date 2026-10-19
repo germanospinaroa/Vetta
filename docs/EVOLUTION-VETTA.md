@@ -2,7 +2,7 @@
 
 ## Estado
 
-La instancia `momentum` de Evolution API 2.3.7 está conectada y asociada al número oficial de eventos. VETTA usa una credencial limitada a esa instancia en Vercel Production; la API key global no se expone al navegador ni se guarda en el repositorio.
+La instancia `momentum` de Evolution API 2.3.7 está conectada y asociada al número oficial de eventos. Su webhook está activo únicamente para VETTA con eventos `MESSAGES_UPSERT`, `GROUP_PARTICIPANTS_UPDATE` y `CONNECTION_UPDATE`. VETTA usa una credencial limitada a esa instancia en Vercel Production; la API key global no se expone al navegador ni se guarda en el repositorio.
 
 El endpoint de recepción es:
 
@@ -10,23 +10,11 @@ El endpoint de recepción es:
 
 La autenticación utiliza la cabecera privada `x-vetta-evolution-token`. El endpoint limita el cuerpo a 256 KiB, rechaza JSON inválido, ignora mensajes enviados por la propia cuenta y no almacena payloads completos.
 
-## Activación pendiente
+## Prueba real pendiente
 
-Aplicar manualmente `supabase/migrations/0003_whatsapp_integration.sql` en el proyecto Supabase autorizado. La comprobación actual devuelve `404` para `whatsapp_inbound_messages`, por lo que el webhook todavía no debe asociarse a `momentum`.
+La migración `0003_whatsapp_integration.sql` está aplicada. Las tablas existen con RLS y el acceso público no devuelve filas. `VETTA_GROUP_JID` corresponde al grupo `Antes De Emprender`.
 
-Después de aplicar la migración:
-
-1. Confirmar que existen `whatsapp_inbound_messages` y `whatsapp_outbound_messages` con RLS activo.
-2. Confirmar que `VETTA_GROUP_JID` corresponde al grupo `Antes De Emprender`.
-3. Configurar en Evolution, únicamente para `momentum`, `POST /webhook/set/momentum` con:
-   - `enabled: true`
-   - `url: https://noemprendas.gritlab.pro/api/webhooks/evolution`
-   - `byEvents: false`
-   - `base64: false`
-   - eventos `MESSAGES_UPSERT`, `GROUP_PARTICIPANTS_UPDATE`, `CONNECTION_UPDATE`
-   - cabecera `x-vetta-evolution-token` con el secreto de Vercel
-4. Verificar con `GET /webhook/find/momentum` que la URL y los eventos coinciden.
-5. Probar con un teléfono externo autorizado.
+La prueba restante requiere un teléfono externo autorizado. Debe demostrar recepción real, bienvenida personalizada, incorporación al grupo, `LISTO` y entrega de la matriz. No se considera completada por una respuesta HTTP de Evolution.
 
 ## Comportamiento
 
