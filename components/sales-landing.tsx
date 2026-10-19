@@ -35,7 +35,7 @@ export function SalesLanding({ cohort }: { cohort: PublicCohort }) {
           <p className="sales-description">Aprende a identificar qué revisar antes de invertir tu tiempo, tu dinero y tu energía en un negocio.</p>
           <p className="sales-date"><strong>Masterclass en vivo</strong><br />Martes 20 y jueves 22 · 8:00 p. m.</p>
           {cta("QUIERO RESERVAR MI LUGAR", "sales-hero-cta")}
-          <p className="sales-gift-note"><span aria-hidden="true">✦</span> Y además recibirás un regalo especial para ayudarte a evaluar mejor cualquier oportunidad de negocio.</p>
+          <p className="sales-gift-note"><span aria-hidden="true">✦</span><span>Y además recibirás un regalo especial para ayudarte a evaluar mejor cualquier oportunidad de negocio.</span></p>
           <div className="sales-hero-image sales-hero-image-mobile"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(max-width: 700px) 100vw, 1px" /></div>
         </div>
         <div className="sales-hero-image sales-hero-image-desktop"><Image src="/images/no-emprendas-hero.png" alt="Profesional revisando notas antes de tomar una decisión" fill priority sizes="(min-width: 900px) 48vw, 1px" /></div>

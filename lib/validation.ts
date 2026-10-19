@@ -44,7 +44,6 @@ export const eventSchema = z.object({
     "customer_converted",
     "ambassador_converted",
     "ambassador_activated",
-    "cta_clicked",
   ]),
   registrationCode: z.string().trim().max(40).optional(),
   cohortId: z.string().trim().max(80).optional(),
