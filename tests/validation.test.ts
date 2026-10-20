@@ -69,12 +69,13 @@ describe("VETTA registration contract", () => {
     expect(calls).toHaveLength(0);
     Object.defineProperty(globalThis, "window", { configurable: true, value: previousWindow });
   });
-  it("initializes Meta only after advertising consent and only once", () => {
+  it("initializes Meta independently and applies advertising consent separately", () => {
     const previousWindow = globalThis.window;
     const calls: unknown[][] = [];
     Object.defineProperty(globalThis, "window", { configurable: true, value: { localStorage: mockStorage({ [ADVERTISING_CONSENT_KEY]: "denied" }), fbq: (...args: unknown[]) => calls.push(args) } });
     applyVendorConsent();
-    expect(calls.some((call) => call[0] === "init")).toBe(false);
+    expect(calls.filter((call) => call[0] === "init" && call[1] === "3337529346452736")).toHaveLength(1);
+    expect(calls[calls.length - 1]).toEqual(["consent", "revoke"]);
     window.localStorage.setItem(ADVERTISING_CONSENT_KEY, "granted");
     applyVendorConsent();
     applyVendorConsent();

@@ -47,7 +47,7 @@ export default function PrivacyPage() {
         </ul>
 
         <h2>Meta Pixel y datos técnicos</h2>
-        <p>Meta Pixel se carga únicamente cuando la persona acepta la preferencia separada de medición publicitaria. El evento <strong>Lead</strong> solo se envía después de que el servidor confirma una inscripción nueva persistida.</p>
+        <p>Meta Pixel se inicializa durante la carga pública para dejar disponible el identificador del píxel, pero comienza con el consentimiento publicitario revocado. No se envían PageView, Lead ni WhatsAppClick mientras esa preferencia no esté autorizada. Al aceptar la medición publicitaria, el sistema aplica el permiso y el evento <strong>Lead</strong> solo se envía después de que el servidor confirma una inscripción nueva persistida.</p>
         <p>El píxel y Meta pueden recibir automáticamente información técnica como dirección IP, URL, página de referencia, fecha y hora, navegador, dispositivo, sistema operativo, identificadores técnicos y cookies o valores equivalentes que Meta pueda establecer o leer, incluidos identificadores de publicidad cuando estén disponibles. El sitio no envía nombres, teléfonos, códigos de registro ni respuestas de la matriz como propiedades del evento.</p>
 
         <h2>Microsoft Clarity y datos técnicos</h2>
