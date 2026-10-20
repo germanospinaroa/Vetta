@@ -32,7 +32,7 @@ export async function persistRegistration(input: RegistrationInput, normalizedPh
   if (consentError) throw new Error("consent_persistence_failed");
   const { error: eventError } = await client.from("lead_events").insert({ lead_id: lead.id, cohort_id: cohort.id, name: "registration_submitted", properties: { form_version: options.qa ? "qa-funnel-v1" : "v1", qa: Boolean(options.qa) } });
   if (eventError) throw new Error("event_persistence_failed");
-  return { registrationCode: lead.registration_code, name: lead.name };
+  return { id: lead.id, registrationCode: lead.registration_code, name: lead.name, whatsappE164: normalizedPhone, cohortId: cohort.id };
 }
 
 export async function persistQaRegistration(input: RegistrationInput, normalizedPhone: string) {
@@ -59,7 +59,7 @@ export async function persistQaRegistration(input: RegistrationInput, normalized
   if (consentError) throw new Error("consent_persistence_failed");
   const { error: eventError } = await client.from("lead_events").insert({ lead_id: lead.id, cohort_id: cohort.id, name: "registration_submitted", properties: { form_version: "qa-whatsapp-v1", qa: true, cohort_status_at_creation: cohortRow.status } });
   if (eventError) throw new Error("event_persistence_failed");
-  return { registrationCode: lead.registration_code, name: lead.name };
+  return { id: lead.id, registrationCode: lead.registration_code, name: lead.name, whatsappE164: normalizedPhone, cohortId: cohort.id };
 }
 
 export async function findPersistedRegistration(registrationCode: string, cohortId: string) {

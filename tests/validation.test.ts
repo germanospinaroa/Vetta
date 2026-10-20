@@ -130,6 +130,26 @@ describe("VETTA registration contract", () => {
     expect(snakeCase.senderE164).toBe("+573001234568");
   });
 
+  it("uses the original conversation JID and extracts a code from a complete message", () => {
+    const message = extractEvolutionMessage({
+      event: "messages.upsert",
+      data: { key: { id: "code-1", remoteJid: "987654321@lid", fromMe: false }, message: { extendedTextMessage: { text: "Hola, me registré y quiero confirmar mi acceso. Mi código es VETTA-96378DDC." } } },
+    });
+    expect(message.senderJid).toBe("987654321@lid");
+    expect(message.senderE164).toBeNull();
+    expect(message.registrationCode).toBe("VETTA-96378DDC");
+    expect(message.text).toContain("Hola, me registré");
+  });
+
+  it("does not treat a group JID as a private conversation", () => {
+    const message = extractEvolutionMessage({
+      event: "messages.upsert",
+      data: { key: { id: "group-1", remoteJid: "120363000000000000@g.us", fromMe: false }, message: { conversation: "VETTA-96378DDC" } },
+    });
+    expect(message.senderJid).toBe("120363000000000000@g.us");
+    expect(message.registrationCode).toBe("VETTA-96378DDC");
+  });
+
   it("accepts only the configured group and preserves unverifiable LIDs", () => {
     const payload = { event: "GROUP_PARTICIPANTS_UPDATE", data: { id: "120363413717481086@g.us", participants: [{ id: "987654@lid" }, { id: "12345@lid", phoneNumber: "573001234567" }] } };
     const group = extractEvolutionGroupData(payload);

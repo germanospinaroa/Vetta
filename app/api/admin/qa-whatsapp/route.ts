@@ -4,7 +4,7 @@ import { getPublicConfig } from "@/lib/config";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { persistQaRegistration } from "@/lib/persistence";
 import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
-import { recoverPendingMatrixDeliveries } from "@/lib/whatsapp-evolution";
+import { recoverPendingMatrixDeliveries, recoverPendingWelcomeDeliveries, recoverWelcomeForRegistration } from "@/lib/whatsapp-evolution";
 
 export const runtime = "nodejs";
 
@@ -18,10 +18,32 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, recovery: result }, { headers: { "cache-control": "no-store" } });
       }
     }
+    if (body?.action === "recover_pending_welcome") {
+      const recoveryToken = process.env.VETTA_RECOVERY_TOKEN;
+      if (recoveryToken && request.headers.get("x-vetta-recovery-token") === recoveryToken) {
+        const result = await recoverPendingWelcomeDeliveries();
+        return NextResponse.json({ ok: true, recovery: result }, { headers: { "cache-control": "no-store" } });
+      }
+    }
+    if (body?.action === "recover_registration_welcome" && typeof body.registrationCode === "string") {
+      const recoveryToken = process.env.VETTA_RECOVERY_TOKEN;
+      if (recoveryToken && request.headers.get("x-vetta-recovery-token") === recoveryToken) {
+        const result = await recoverWelcomeForRegistration(body.registrationCode.trim().toUpperCase());
+        return NextResponse.json({ ok: true, recovery: result }, { headers: { "cache-control": "no-store" } });
+      }
+    }
     const admin = await getAuthorizedAdmin("admin");
     if (!admin) return NextResponse.json({ ok: false, code: "unauthorized" }, { status: 401 });
     if (body?.action === "recover_pending_matrix") {
       const result = await recoverPendingMatrixDeliveries();
+      return NextResponse.json({ ok: true, recovery: result });
+    }
+    if (body?.action === "recover_pending_welcome") {
+      const result = await recoverPendingWelcomeDeliveries();
+      return NextResponse.json({ ok: true, recovery: result });
+    }
+    if (body?.action === "recover_registration_welcome" && typeof body.registrationCode === "string") {
+      const result = await recoverWelcomeForRegistration(body.registrationCode.trim().toUpperCase());
       return NextResponse.json({ ok: true, recovery: result });
     }
     const parsed = registrationSchema.safeParse({ ...body, consent: "on", consentVersion: "v1", utm_campaign: "vetta_qa_whatsapp" });

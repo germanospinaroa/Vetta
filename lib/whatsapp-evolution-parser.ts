@@ -109,7 +109,7 @@ export function extractEvolutionMessage(payload: unknown) {
   return {
     eventName: normalizeEvolutionEventName(root.event ?? root.type, "messages.upsert"),
     providerMessageId: String(providerId || fallback).slice(0, 240),
-    senderJid: typeof sender === "string" ? sender : null,
+    senderJid: typeof remoteJid === "string" ? remoteJid.trim() : typeof sender === "string" ? sender : null,
     senderE164: phoneCandidates.map(normalizeWhatsAppSender).find(Boolean) || null,
     registrationCode: extractRegistrationCode(text),
     text: typeof text === "string" ? text.trim() : "",
