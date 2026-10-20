@@ -141,11 +141,14 @@ async function processClaimedMatrix(client: NonNullable<ReturnType<typeof create
 export async function processDueWhatsAppDeliveries() {
   const client = createSupabaseAdminClient();
   if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
+  const staleClaimCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const { count: staleAttempting, error: staleError } = await client.from("whatsapp_outbound_messages").select("id", { count: "exact", head: true }).eq("kind", "matrix").eq("status", "attempting").lt("claimed_at", staleClaimCutoff);
+  if (staleError) throw new Error("stale_attempt_lookup_failed");
   const { data: rows, error } = await client.rpc("claim_due_whatsapp_messages", { p_limit: 20 });
   if (error) throw new Error("due_message_claim_failed");
   const results = [];
   for (const row of rows || []) results.push(await processClaimedMatrix(client, row));
-  return { claimed: rows?.length || 0, results };
+  return { claimed: rows?.length || 0, staleAttempting: staleAttempting || 0, results };
 }
 
 export async function deliverWelcomeForLead(lead: { id: string; name: string; whatsapp_e164: string }, options: ScheduleOptions = {}) {
