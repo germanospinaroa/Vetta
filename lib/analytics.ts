@@ -9,6 +9,7 @@ type ClarityFunction = ((...args: unknown[]) => void) & { q?: unknown[] };
 declare global {
   interface Window {
     fbq?: MetaFunction;
+    __vettaMetaPixelScriptReady?: boolean;
     __vettaMetaPixelInitialized?: boolean;
     clarity?: ClarityFunction;
   }
@@ -60,14 +61,21 @@ export function setAdvertisingConsent(value: "granted" | "denied") {
 
 export function applyVendorConsent() {
   if (typeof window === "undefined") return;
-  if (window.fbq) {
+  if (window.fbq && window.__vettaMetaPixelScriptReady) {
+    const advertisingGranted = advertisingConsentGranted();
+    window.fbq("consent", advertisingGranted ? "grant" : "revoke");
     if (!window.__vettaMetaPixelInitialized) {
       window.fbq("init", META_PIXEL_ID);
       window.__vettaMetaPixelInitialized = true;
     }
-    window.fbq("consent", advertisingConsentGranted() ? "grant" : "revoke");
   }
   if (window.clarity) window.clarity("consentv2", { ad_Storage: advertisingConsentGranted() ? "granted" : "denied", analytics_Storage: analyticsConsentGranted() ? "granted" : "denied" });
+}
+
+export function markMetaPixelScriptReady() {
+  if (typeof window === "undefined") return;
+  window.__vettaMetaPixelScriptReady = true;
+  applyVendorConsent();
 }
 
 export function openPrivacyPreferences() {
