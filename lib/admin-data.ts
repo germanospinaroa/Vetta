@@ -2,6 +2,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Count = { count: number; error: string | null };
 
+function maskOperationalJid(value: unknown) {
+  if (typeof value !== "string" || value.length < 7) return value ? "identificador enmascarado" : null;
+  return `${value.slice(0, 3)}…${value.slice(-7)}`;
+}
+
 async function countTable(table: string): Promise<Count> {
   const client = await createSupabaseServerClient();
   if (!client) return { count: 0, error: "supabase_not_configured" };
@@ -24,10 +29,11 @@ export async function getAdminLeads(search = "") {
   if (error || !data) return { configured: false, leads: [] as Array<Record<string, unknown>> };
   const ids = data.map((lead) => String(lead.id));
   if (ids.length === 0) return { configured: true, leads: [] };
-  const [{ data: events }, { data: inbound }, { data: outbound }] = await Promise.all([
+  const [{ data: events }, { data: inbound }, { data: outbound }, { data: conversations }] = await Promise.all([
     client.from("lead_events").select("lead_id,name,properties,created_at,created_by").in("lead_id", ids),
     client.from("whatsapp_inbound_messages").select("lead_id,action").in("lead_id", ids),
-    client.from("whatsapp_outbound_messages").select("lead_id,kind,status,error_code").in("lead_id", ids),
+    client.from("whatsapp_outbound_messages").select("lead_id,conversation_id,kind,status,error_code,scheduled_for,attempt_count,last_attempt_at,provider_message_id,recipient_jid").in("lead_id", ids),
+    client.from("whatsapp_conversations").select("id,lead_id,instance_name,sender_jid,status,linked_at").in("lead_id", ids),
   ]);
   const eventMap = new Map<string, Set<string>>();
   const manualGroupMap = new Map<string, { confirmedAt: string; confirmedBy: string | null }>();
@@ -46,28 +52,40 @@ export async function getAdminLeads(search = "") {
     actions.add(String(message.action));
     inboundMap.set(String(message.lead_id), actions);
   }
-  const outboundMap = new Map<string, Map<string, string>>();
+  const outboundMap = new Map<string, Map<string, Record<string, unknown>>>();
   for (const message of outbound || []) {
-    const statuses = outboundMap.get(String(message.lead_id)) || new Map<string, string>();
-    statuses.set(String(message.kind), String(message.status));
+    const statuses = outboundMap.get(String(message.lead_id)) || new Map<string, Record<string, unknown>>();
+    statuses.set(String(message.kind), message as Record<string, unknown>);
     outboundMap.set(String(message.lead_id), statuses);
   }
+  const conversationMap = new Map<string, Record<string, unknown>>();
+  for (const conversation of conversations || []) conversationMap.set(String(conversation.lead_id), conversation as Record<string, unknown>);
   const leads = data.map((lead) => {
     const id = String(lead.id);
     const leadEvents = eventMap.get(id) || new Set<string>();
     const actions = inboundMap.get(id) || new Set<string>();
-    const outboundStatus = outboundMap.get(id) || new Map<string, string>();
-    const matrixStatus = outboundStatus.get("matrix");
+    const outboundStatus = outboundMap.get(id) || new Map<string, Record<string, unknown>>();
+    const welcome = outboundStatus.get("welcome");
+    const matrix = outboundStatus.get("matrix");
+    const welcomeStatus = String(welcome?.status || "");
+    const matrixStatus = String(matrix?.status || "");
+    const conversation = conversationMap.get(id);
     const manualGroup = manualGroupMap.get(id);
     const inboundPending = actions.has("listo_pending_group_verification") || actions.has("matrix_delivery_failed");
     return {
       ...lead,
       whatsapp_status: [
         leadEvents.has("conversation_confirmed") ? "conversación" : null,
-        outboundStatus.get("welcome") === "sent" ? "bienvenida" : null,
+        welcomeStatus === "sent" ? "bienvenida aceptada" : welcomeStatus === "failed" ? "bienvenida fallida" : welcomeStatus === "pending" || welcomeStatus === "attempting" ? "bienvenida pendiente" : null,
         leadEvents.has("group_join_verified") ? "grupo verificado" : actions.has("group_join_declared") ? "LISTO pendiente" : null,
         matrixStatus === "sent" ? "matriz enviada" : matrixStatus === "pending" || inboundPending ? "matriz pendiente" : matrixStatus === "failed" ? "matriz fallida" : null,
       ].filter(Boolean).join(" · ") || "pendiente",
+      whatsapp_validation_status: conversation ? "WhatsApp validado mediante código" : "WhatsApp todavía no vinculado",
+      operational_jid: maskOperationalJid(conversation?.sender_jid),
+      welcome_delivery_status: welcomeStatus || "sin entrega",
+      matrix_delivery_status: matrixStatus || "sin programar",
+      matrix_scheduled_for: matrix?.scheduled_for || null,
+      last_operational_error: String(matrix?.error_code || welcome?.error_code || "") || null,
       group_membership_status: manualGroup ? "Confirmado manualmente" : leadEvents.has("group_join_verified") ? "Confirmado automáticamente" : "Sin confirmar",
       group_membership_method: manualGroup ? "manual" : leadEvents.has("group_join_verified") ? "automatic" : null,
       group_membership_confirmed_at: manualGroup?.confirmedAt || null,
