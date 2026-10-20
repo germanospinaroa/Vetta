@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { getPublicConfig } from "@/lib/config";
 import { fetchEvolutionGroupParticipants, sendEvolutionText } from "@/lib/evolution";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { canRetryOutbound, isOperationalDeliveryTarget, matchesOperationalRecipient, shouldScheduleMatrix } from "@/lib/whatsapp-operational";
+import { canRetryOutbound, canSendClaimedOutbound, isOperationalDeliveryTarget, matchesOperationalRecipient, shouldScheduleMatrix } from "@/lib/whatsapp-operational";
 import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipants, matchesConfiguredEvolutionGroup, validateWhatsAppGroupUrl } from "@/lib/whatsapp-evolution-parser";
 
 const COHORT_ID = process.env.NEXT_PUBLIC_ACTIVE_COHORT_ID;
@@ -61,15 +61,21 @@ async function resolveConversation(client: AdminClient, message: ReturnType<type
 
 async function recordEvent(client: AdminClient, leadId: string, name: string, properties: Record<string, string | boolean>) { await client.from("lead_events").insert({ lead_id: leadId, cohort_id: COHORT_ID, name, properties }); }
 
-async function sendOnce(client: AdminClient, conversation: OperationalConversation, lead: OperationalLead, kind: "welcome" | "matrix", text: string) {
+type SendOnceOptions = { claimedRowId?: string };
+
+async function sendOnce(client: AdminClient, conversation: OperationalConversation, lead: OperationalLead, kind: "welcome" | "matrix", text: string, options: SendOnceOptions = {}) {
   const { data: existing, error: lookupError } = await client.from("whatsapp_outbound_messages").select("id,status,provider_message_id,created_at,error_code").eq("conversation_id", conversation.id).eq("kind", kind).maybeSingle();
   if (lookupError) throw new Error("outbound_lookup_failed");
-  if (existing?.status === "sent") return { sent: false, duplicate: true, providerMessageId: existing.provider_message_id || null };
-  if (existing?.status === "attempting") return { sent: false, duplicate: true, pending: true, providerMessageId: existing.provider_message_id || null };
-  if (existing?.status === "failed" && existing.error_code === "evolution_acceptance_uncertain") return { sent: false, duplicate: true, uncertain: true, providerMessageId: existing.provider_message_id || null };
-  if (existing?.status === "pending" && existing.created_at && Date.now() - Date.parse(existing.created_at) < 5 * 60 * 1000) return { sent: false, duplicate: true, pending: true, providerMessageId: existing.provider_message_id || null };
+  if (existing?.status === "sent") return { sent: false, duplicate: true, attempted: false, providerMessageId: existing.provider_message_id || null };
+  if (existing?.status === "attempting" && !canSendClaimedOutbound(existing.status, existing.id, options.claimedRowId)) {
+    return { sent: false, duplicate: true, pending: true, attempted: false, providerMessageId: existing.provider_message_id || null };
+  }
+  if (existing?.status === "failed" && existing.error_code === "evolution_acceptance_uncertain") return { sent: false, duplicate: true, uncertain: true, attempted: false, providerMessageId: existing.provider_message_id || null };
+  if (existing?.status === "pending" && existing.created_at && Date.now() - Date.parse(existing.created_at) < 5 * 60 * 1000) return { sent: false, duplicate: true, pending: true, attempted: false, providerMessageId: existing.provider_message_id || null };
   let row: { id: string } | null = null;
-  if (existing && canRetryOutbound(existing.status, existing.error_code)) {
+  if (existing?.status === "attempting" && canSendClaimedOutbound(existing.status, existing.id, options.claimedRowId)) {
+    row = { id: existing.id };
+  } else if (existing && canRetryOutbound(existing.status, existing.error_code)) {
     const { data: claimed, error } = await client.from("whatsapp_outbound_messages").update({ status: "pending", error_code: null, claimed_at: null }).eq("id", existing.id).eq("status", existing.status).select("id").maybeSingle();
     if (error) throw new Error("outbound_claim_failed");
     row = claimed;
@@ -78,10 +84,10 @@ async function sendOnce(client: AdminClient, conversation: OperationalConversati
     if (!error && inserted) row = inserted;
     else if (error?.code === "23505") {
       const { data: concurrent } = await client.from("whatsapp_outbound_messages").select("status,provider_message_id").eq("conversation_id", conversation.id).eq("kind", kind).maybeSingle();
-      return { sent: false, duplicate: true, pending: concurrent?.status !== "failed", providerMessageId: concurrent?.provider_message_id || null };
+      return { sent: false, duplicate: true, pending: concurrent?.status !== "failed", attempted: false, providerMessageId: concurrent?.provider_message_id || null };
     } else if (error) throw new Error("outbound_insert_failed");
   }
-  if (!row) return { sent: false, duplicate: true, pending: true, providerMessageId: existing?.provider_message_id || null };
+  if (!row) return { sent: false, duplicate: true, pending: true, attempted: false, providerMessageId: existing?.provider_message_id || null };
   try {
     const response = await sendEvolutionText(conversation.sender_jid, text);
     const responseKey = typeof response.key === "object" && response.key ? response.key as Record<string, unknown> : null;
@@ -92,7 +98,7 @@ async function sendOnce(client: AdminClient, conversation: OperationalConversati
     if (!providerId || ["ERROR", "FAILED", "REJECTED"].includes(providerStatus)) throw new Error("evolution_message_not_accepted");
     const { error } = await client.from("whatsapp_outbound_messages").update({ status: "sent", provider_message_id: providerId, sent_at: new Date().toISOString(), error_code: null }).eq("id", row.id).eq("conversation_id", conversation.id);
     if (error) throw new Error("outbound_state_failed");
-    return { sent: true, duplicate: false, providerMessageId: providerId };
+    return { sent: true, duplicate: false, attempted: true, providerMessageId: providerId };
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown";
     const knownRejected = /^evolution_http_4\d\d$/.test(message) || message === "evolution_message_not_accepted";
@@ -118,8 +124,8 @@ async function deliverWelcomeForConversation(client: AdminClient, conversation: 
   return { welcome, matrix };
 }
 
-async function deliverMatrixForConversation(client: AdminClient, conversation: OperationalConversation, lead: OperationalLead) {
-  const result = await sendOnce(client, conversation, lead, "matrix", buildOperationalMatrixText(matrixLink()));
+async function deliverMatrixForConversation(client: AdminClient, conversation: OperationalConversation, lead: OperationalLead, claimedRowId?: string) {
+  const result = await sendOnce(client, conversation, lead, "matrix", buildOperationalMatrixText(matrixLink()), { claimedRowId });
   if (result.sent) await recordEvent(client, lead.id, "matrix_sent", { source: "evolution", automated: true });
   return result;
 }
@@ -144,7 +150,7 @@ export async function processDueWhatsAppDeliveries() {
       results.push({ status: "failed", reason: "operational_conversation_missing" });
       continue;
     }
-    try { results.push({ ...(await deliverMatrixForConversation(client, conversation, lead)), status: "processed" }); } catch { results.push({ status: "failed", reason: "evolution_send_failed" }); }
+    try { results.push({ ...(await deliverMatrixForConversation(client, conversation, lead, row.id)), status: "processed" }); } catch { results.push({ status: "failed", reason: "evolution_send_failed" }); }
   }
   return { claimed: rows?.length || 0, staleAttempting: staleAttempting || 0, results };
 }
