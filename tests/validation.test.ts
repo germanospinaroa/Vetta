@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildWhatsAppHref } from "../lib/whatsapp";
+import { createConfirmationToken, createRecoveryToken, getVerifiedConfirmationCode, hashRecoveryToken, verifyConfirmationToken, verifyRecoveryToken } from "../lib/confirmation";
 import { territoryFromCampaign } from "../lib/tracking";
 import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, applyVendorConsent, isConfirmedNewRegistration, markMetaPixelScriptReady, setAdvertisingConsent, shouldTrackPageView, trackMetaWhatsAppClick, trackNewMetaLead } from "../lib/analytics";
 import { isDuplicateRegistrationConstraint } from "../lib/registration-dedupe";
@@ -117,6 +118,29 @@ describe("VETTA registration contract", () => {
     const href = buildWhatsAppHref("573001234567", "Ana", "VETTA-ABC12345");
     const message = decodeURIComponent((href || "").split("?text=")[1] || "");
     expect(message).toContain("Mi código es VETTA-ABC12345");
+  });
+
+  it("only recovers a code from a valid signed confirmation session", () => {
+    const previousSecret = process.env.VETTA_CONFIRMATION_SECRET;
+    process.env.VETTA_CONFIRMATION_SECRET = "isolated-test-secret";
+    const token = createConfirmationToken("VETTA-ABC12345", "cohort-test");
+    expect(getVerifiedConfirmationCode(token, "cohort-test")).toBe("VETTA-ABC12345");
+    expect(verifyConfirmationToken(token, "VETTA-ABC12345", "cohort-test")).toBe(true);
+    expect(getVerifiedConfirmationCode(`${token}tampered`, "cohort-test")).toBeUndefined();
+    expect(getVerifiedConfirmationCode(token, "other-cohort")).toBeUndefined();
+    if (previousSecret === undefined) delete process.env.VETTA_CONFIRMATION_SECRET;
+    else process.env.VETTA_CONFIRMATION_SECRET = previousSecret;
+  });
+
+  it("scopes administrative recovery to a signed, expiring token without exposing the code in its hash", () => {
+    const previousSecret = process.env.VETTA_CONFIRMATION_SECRET;
+    process.env.VETTA_CONFIRMATION_SECRET = "isolated-test-secret";
+    const token = createRecoveryToken("lead-test-123456789012345", "cohort-test");
+    expect(verifyRecoveryToken(token, "cohort-test")?.leadId).toBe("lead-test-123456789012345");
+    expect(verifyRecoveryToken(token, "other-cohort")).toBeNull();
+    expect(hashRecoveryToken(token)).not.toContain("VETTA-");
+    if (previousSecret === undefined) delete process.env.VETTA_CONFIRMATION_SECRET;
+    else process.env.VETTA_CONFIRMATION_SECRET = previousSecret;
   });
 
   it("only accepts the three defined campaign territories", () => {

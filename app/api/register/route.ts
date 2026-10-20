@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { getPublicConfig } from "@/lib/config";
 import { saveDemoLead } from "@/lib/demo-store";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
-import { findRegistrationForRecovery, persistRegistration } from "@/lib/persistence";
+import { findPersistedRegistration, persistRegistration } from "@/lib/persistence";
 import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
-import { createConfirmationToken } from "@/lib/confirmation";
+import { createConfirmationToken, getVerifiedConfirmationCode } from "@/lib/confirmation";
 import { cookies } from "next/headers";
 import { hasValidQaSession, qaSessionCookieName } from "@/lib/qa-session";
 import { sendMetaLeadServerEvent } from "@/lib/meta-capi";
@@ -30,10 +30,11 @@ export async function POST(request: Request) {
     try { lead = config.demoMode ? saveDemoLead(parsed.data, normalizedPhone, config.cohort.id) : await persistRegistration(parsed.data, normalizedPhone, { qa }); }
     catch (error) {
       if (error instanceof Error && error.message === "duplicate_registration") {
-        const existing = config.demoMode ? null : await findRegistrationForRecovery(parsed.data, normalizedPhone, config.cohort.id);
-        if (!existing) return NextResponse.json({ ok: false, code: "existing_registration_recovery_required", message: "Ya existe una inscripción con esos datos, pero no pudimos verificar la recuperación. Solicita ayuda a soporte." }, { status: 409 });
+        const confirmationCode = getVerifiedConfirmationCode((await cookies()).get("vetta_registration_confirmation")?.value, config.cohort.id);
+        const existing = confirmationCode && !config.demoMode ? await findPersistedRegistration(confirmationCode, config.cohort.id) : null;
+        if (!existing) return NextResponse.json({ ok: false, code: "registration_recovery_required", message: "No pudimos completar esta solicitud. Si ya te habías inscrito, solicita una recuperación segura a soporte." }, { status: 409 });
         const response = NextResponse.json({ ok: true, existing: true, newRegistration: false, mode: "LIVE", registrationCode: existing.registrationCode, firstName: existing.name.trim().split(/\s+/)[0], whatsappHref: buildWhatsAppHref(config.whatsappNumber, existing.name, existing.registrationCode) });
-        response.cookies.set("vetta_registration_confirmation", createConfirmationToken(existing.registrationCode, config.cohort.id), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/confirmacion", maxAge: 1800 });
+        response.cookies.set("vetta_registration_confirmation", createConfirmationToken(existing.registrationCode, config.cohort.id), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 1800 });
         return response;
       }
       return NextResponse.json({ ok: false, code: "persistence_error", message: "No pudimos guardar tu registro. Inténtalo de nuevo." }, { status: 503 });
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       mode: config.demoMode ? "TEST" : "LIVE",
       ...(metaEventId ? { metaEventId } : {}),
     });
-    if (!config.demoMode) response.cookies.set("vetta_registration_confirmation", createConfirmationToken(lead.registrationCode, config.cohort.id), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/confirmacion", maxAge: 1800 });
+    if (!config.demoMode) response.cookies.set("vetta_registration_confirmation", createConfirmationToken(lead.registrationCode, config.cohort.id), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 1800 });
     return response;
   } catch {
     return NextResponse.json({ ok: false, code: "server_error", message: "No pudimos recibir el registro. Inténtalo de nuevo." }, { status: 500 });
