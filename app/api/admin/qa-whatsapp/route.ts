@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, verification: result }, { headers: { "cache-control": "no-store" } });
     }
     if (body?.action === "confirm_group_membership_manual" && typeof body.leadId === "string") {
-      const result = await recordManualGroupConfirmation(body.leadId.trim());
+      const result = await recordManualGroupConfirmation(body.leadId.trim(), admin.id);
       return NextResponse.json({ ok: true, confirmation: result }, { headers: { "cache-control": "no-store" } });
     }
     if (body?.action === "recover_pending_matrix") {

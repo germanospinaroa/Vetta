@@ -25,15 +25,20 @@ export async function getAdminLeads(search = "") {
   const ids = data.map((lead) => String(lead.id));
   if (ids.length === 0) return { configured: true, leads: [] };
   const [{ data: events }, { data: inbound }, { data: outbound }] = await Promise.all([
-    client.from("lead_events").select("lead_id,name").in("lead_id", ids),
+    client.from("lead_events").select("lead_id,name,properties,created_at,created_by").in("lead_id", ids),
     client.from("whatsapp_inbound_messages").select("lead_id,action").in("lead_id", ids),
     client.from("whatsapp_outbound_messages").select("lead_id,kind,status,error_code").in("lead_id", ids),
   ]);
   const eventMap = new Map<string, Set<string>>();
+  const manualGroupMap = new Map<string, { confirmedAt: string; confirmedBy: string | null }>();
   for (const event of events || []) {
     const leadEvents = eventMap.get(String(event.lead_id)) || new Set<string>();
     leadEvents.add(String(event.name));
     eventMap.set(String(event.lead_id), leadEvents);
+    const properties = event.properties && typeof event.properties === "object" ? event.properties as Record<string, unknown> : {};
+    if (event.name === "group_join_verified" && properties.verification_method === "manual" && !manualGroupMap.has(String(event.lead_id))) {
+      manualGroupMap.set(String(event.lead_id), { confirmedAt: String(event.created_at), confirmedBy: event.created_by ? String(event.created_by) : null });
+    }
   }
   const inboundMap = new Map<string, Set<string>>();
   for (const message of inbound || []) {
@@ -53,6 +58,7 @@ export async function getAdminLeads(search = "") {
     const actions = inboundMap.get(id) || new Set<string>();
     const outboundStatus = outboundMap.get(id) || new Map<string, string>();
     const matrixStatus = outboundStatus.get("matrix");
+    const manualGroup = manualGroupMap.get(id);
     const inboundPending = actions.has("listo_pending_group_verification") || actions.has("matrix_delivery_failed");
     return {
       ...lead,
@@ -62,6 +68,10 @@ export async function getAdminLeads(search = "") {
         leadEvents.has("group_join_verified") ? "grupo verificado" : actions.has("group_join_declared") ? "LISTO pendiente" : null,
         matrixStatus === "sent" ? "matriz enviada" : matrixStatus === "pending" || inboundPending ? "matriz pendiente" : matrixStatus === "failed" ? "matriz fallida" : null,
       ].filter(Boolean).join(" · ") || "pendiente",
+      group_membership_status: manualGroup ? "Confirmado manualmente" : leadEvents.has("group_join_verified") ? "Confirmado automáticamente" : "Sin confirmar",
+      group_membership_method: manualGroup ? "manual" : leadEvents.has("group_join_verified") ? "automatic" : null,
+      group_membership_confirmed_at: manualGroup?.confirmedAt || null,
+      group_membership_confirmed_by: manualGroup?.confirmedBy || null,
     };
   });
   return { configured: true, leads };

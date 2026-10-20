@@ -65,7 +65,7 @@ export async function getGroupMembershipReport() {
   return { groupJid: configuredGroup, providerReachable, participantCount: participantResult.length, unresolvedIdentifiers, rows };
 }
 
-export async function recordManualGroupConfirmation(leadId: string) {
+export async function recordManualGroupConfirmation(leadId: string, operatorId: string) {
   const client = createSupabaseAdminClient();
   if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
   const { data: lead, error: leadError } = await client.from("leads").select("id").eq("id", leadId).eq("cohort_id", COHORT_ID).maybeSingle();
@@ -74,7 +74,7 @@ export async function recordManualGroupConfirmation(leadId: string) {
   const { data: existing, error: existingError } = await client.from("lead_events").select("id").eq("lead_id", leadId).eq("cohort_id", COHORT_ID).eq("name", "group_join_verified").contains("properties", { verification_method: "manual" }).limit(1);
   if (existingError) throw new Error("manual_confirmation_lookup_failed");
   if (existing?.length) return { recorded: false, duplicate: true };
-  const { error } = await client.from("lead_events").insert({ lead_id: leadId, cohort_id: COHORT_ID, name: "group_join_verified", properties: { source: "operator", automated: false, verification_method: "manual" } });
+  const { error } = await client.from("lead_events").insert({ lead_id: leadId, cohort_id: COHORT_ID, name: "group_join_verified", properties: { source: "operator", automated: false, verification_method: "manual" }, created_by: operatorId });
   if (error) throw new Error("manual_confirmation_failed");
   return { recorded: true, duplicate: false };
 }
