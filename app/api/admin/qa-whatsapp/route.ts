@@ -74,8 +74,7 @@ export async function POST(request: Request) {
     if (!lead) return NextResponse.json({ ok: false, code: "persistence_not_configured" }, { status: 503 });
     const config = getPublicConfig();
     return NextResponse.json({ ok: true, qa: true, registrationCode: lead.registrationCode, whatsappHref: buildWhatsAppHref(config.whatsappNumber, lead.name, lead.registrationCode) });
-  } catch (error) {
-    if (error instanceof Error && error.message === "duplicate_registration") return NextResponse.json({ ok: false, code: "duplicate_registration", message: "Ese teléfono ya tiene un registro en esta cohorte." }, { status: 409 });
+  } catch {
     return NextResponse.json({ ok: false, code: "persistence_error", message: "No se pudo crear el registro QA." }, { status: 503 });
   }
 }

@@ -2,15 +2,11 @@ import { getPublicConfig } from "@/lib/config";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { territoryFromCampaign } from "@/lib/tracking";
 import type { RegistrationInput } from "@/lib/validation";
-import { isDuplicateRegistrationConstraint } from "@/lib/registration-dedupe";
 
 export async function persistRegistration(input: RegistrationInput, normalizedPhone: string, options: { qa?: boolean } = {}) {
   const client = createSupabaseAdminClient();
   if (!client) return null;
   const cohort = getPublicConfig().cohort;
-  const { data: existing, error: existingError } = await client.from("leads").select("id").eq("cohort_id", cohort.id).eq("whatsapp_e164", normalizedPhone).maybeSingle();
-  if (existingError) throw new Error("registration_duplicate_check_failed");
-  if (existing) throw new Error("duplicate_registration");
   const { data: lead, error } = await client.from("leads").insert({
     cohort_id: cohort.id,
     registration_code: `${options.qa ? "QA" : "VETTA"}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
@@ -19,10 +15,7 @@ export async function persistRegistration(input: RegistrationInput, normalizedPh
     city: input.city,
     country_code: input.country,
   }).select("id, registration_code, name").single();
-  if (error) {
-    if (isDuplicateRegistrationConstraint(error)) throw new Error("duplicate_registration");
-    throw new Error("registration_persistence_failed");
-  }
+  if (error) throw new Error("registration_persistence_failed");
   if (!lead) throw new Error("registration_persistence_failed");
   const { error: attributionError } = await client.from("campaign_attribution").insert({ lead_id: lead.id, utm_source: input.utm_source || null, utm_medium: input.utm_medium || null, utm_campaign: input.utm_campaign || null, utm_content: input.utm_content || null, utm_term: input.utm_term || null, fbclid: input.fbclid || null, fbp: input.fbp || null, fbc: input.fbc || null, territory: territoryFromCampaign(input.utm_campaign) });
   if (attributionError) throw new Error("attribution_persistence_failed");
@@ -41,9 +34,6 @@ export async function persistQaRegistration(input: RegistrationInput, normalized
   const cohort = getPublicConfig().cohort;
   const { data: cohortRow, error: cohortError } = await client.from("cohorts").select("id,status").eq("id", cohort.id).maybeSingle();
   if (cohortError || !cohortRow) throw new Error("qa_cohort_not_found");
-  const { data: existing, error: existingError } = await client.from("leads").select("id").eq("cohort_id", cohort.id).eq("whatsapp_e164", normalizedPhone).maybeSingle();
-  if (existingError) throw new Error("registration_duplicate_check_failed");
-  if (existing) throw new Error("duplicate_registration");
   const { data: lead, error } = await client.from("leads").insert({
     cohort_id: cohort.id,
     registration_code: `QA-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,

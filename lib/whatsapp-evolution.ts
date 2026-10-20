@@ -31,7 +31,7 @@ async function getLeadForConversation(client: AdminClient, leadId: string) {
 }
 
 async function getConversationByJid(client: AdminClient, senderJid: string) {
-  const { data, error } = await client.from("whatsapp_conversations").select("id,lead_id,instance_name,sender_jid,sender_e164").eq("instance_name", INSTANCE).eq("sender_jid", senderJid).eq("status", "active").maybeSingle();
+  const { data, error } = await client.from("whatsapp_conversations").select("id,lead_id,instance_name,sender_jid,sender_e164").eq("instance_name", INSTANCE).eq("sender_jid", senderJid).eq("status", "active").order("linked_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw new Error("conversation_lookup_failed");
   return data as OperationalConversation | null;
 }
@@ -44,17 +44,19 @@ async function getConversationById(client: AdminClient, conversationId: string) 
 
 async function resolveConversation(client: AdminClient, message: ReturnType<typeof extractEvolutionMessage>): Promise<ConversationResolution> {
   if (!message.senderJid) return { conversation: null, lead: null, reason: "conversation_not_found" };
+  if (message.registrationCode) {
+    const { count: attempts, error: attemptError } = await client.from("whatsapp_inbound_messages").select("id", { count: "exact", head: true }).eq("sender_jid", message.senderJid).gte("received_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+    if (attemptError) throw new Error("code_attempt_lookup_failed");
+    if ((attempts || 0) >= CODE_ATTEMPT_LIMIT) return { conversation: null, lead: null, reason: "rate_limited" };
+    const { data, error } = await client.rpc("link_whatsapp_conversation", { p_cohort_id: COHORT_ID, p_registration_code: message.registrationCode, p_instance_name: INSTANCE, p_sender_jid: message.senderJid, p_sender_e164: message.senderE164, p_link_message_id: message.providerMessageId });
+    if (error) throw new Error("conversation_link_failed");
+    const result = data as { status?: string; lead_id?: string; conversation_id?: string } | null;
+    if (!result?.lead_id || !result.conversation_id || ["lead_already_linked", "conversation_already_linked", "concurrent_link_conflict"].includes(result.status || "")) return { conversation: null, lead: null, reason: result?.status === "code_not_found" ? "code_not_found" : "code_already_linked" };
+    return { conversation: await getConversationById(client, result.conversation_id), lead: await getLeadForConversation(client, result.lead_id), reason: result.status === "linked" ? "code_linked" : "linked" };
+  }
   const existingConversation = await getConversationByJid(client, message.senderJid);
   if (existingConversation) return { conversation: existingConversation, lead: await getLeadForConversation(client, existingConversation.lead_id), reason: "linked" };
-  if (!message.registrationCode) return { conversation: null, lead: null, reason: "conversation_not_found" };
-  const { count: attempts, error: attemptError } = await client.from("whatsapp_inbound_messages").select("id", { count: "exact", head: true }).eq("sender_jid", message.senderJid).gte("received_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
-  if (attemptError) throw new Error("code_attempt_lookup_failed");
-  if ((attempts || 0) >= CODE_ATTEMPT_LIMIT) return { conversation: null, lead: null, reason: "rate_limited" };
-  const { data, error } = await client.rpc("link_whatsapp_conversation", { p_cohort_id: COHORT_ID, p_registration_code: message.registrationCode, p_instance_name: INSTANCE, p_sender_jid: message.senderJid, p_sender_e164: message.senderE164, p_link_message_id: message.providerMessageId });
-  if (error) throw new Error("conversation_link_failed");
-  const result = data as { status?: string; lead_id?: string; conversation_id?: string } | null;
-  if (!result?.lead_id || !result.conversation_id || ["lead_already_linked", "conversation_already_linked", "concurrent_link_conflict"].includes(result.status || "")) return { conversation: null, lead: null, reason: result?.status === "code_not_found" ? "code_not_found" : "code_already_linked" };
-  return { conversation: await getConversationById(client, result.conversation_id), lead: await getLeadForConversation(client, result.lead_id), reason: result.status === "linked" ? "code_linked" : "linked" };
+  return { conversation: null, lead: null, reason: "conversation_not_found" };
 }
 
 async function recordEvent(client: AdminClient, leadId: string, name: string, properties: Record<string, string | boolean>) { await client.from("lead_events").insert({ lead_id: leadId, cohort_id: COHORT_ID, name, properties }); }
