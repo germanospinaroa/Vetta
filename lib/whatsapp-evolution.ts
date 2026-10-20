@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { getPublicConfig } from "@/lib/config";
 import { sendEvolutionText } from "@/lib/evolution";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, matchesConfiguredEvolutionGroup, validateWhatsAppGroupUrl } from "@/lib/whatsapp-evolution-parser";
+import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, matchesConfiguredEvolutionGroup, validateWhatsAppGroupUrl } from "@/lib/whatsapp-evolution-parser";
 
 const COHORT_ID = process.env.NEXT_PUBLIC_ACTIVE_COHORT_ID;
 const INSTANCE = process.env.EVOLUTION_INSTANCE || "momentum";
@@ -25,6 +25,7 @@ function matrixLink() {
 
 
 type EvolutionLead = { id: string; name: string; whatsapp_e164: string; registration_code: string };
+type ScheduleOptions = { scheduleMatrix?: boolean };
 type ConversationResolution = { lead: EvolutionLead | null; reason: "linked" | "code_linked" | "code_not_found" | "code_already_linked" | "rate_limited" | "conversation_not_found" };
 const CODE_ATTEMPT_LIMIT = 10;
 
@@ -91,7 +92,7 @@ async function sendOnce(client: NonNullable<ReturnType<typeof createSupabaseAdmi
 }
 
 async function deliverMatrixForLead(client: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, lead: { id: string; name: string }, recipient: string) {
-  const text = `¡Perfecto, ${firstName(lead.name)}! 🎁\n\nAquí tienes EL FILTRO ANTES DEL SÍ, tu diagnóstico interactivo para descubrir qué revisar antes de comprometerte con una oportunidad:\n\n${matrixLink()}\n\nRespóndelo y recibirás un análisis con tus principales hallazgos, señales de alerta y próximos pasos.\n\nRecuerda: los accesos a nuestros dos encuentros en vivo se compartirán en el grupo privado Antes de Emprender.`;
+  const text = buildOperationalMatrixText(matrixLink());
   const sent = await sendOnce(client, lead, recipient, "matrix", text);
   if (sent.sent) {
     await recordEvent(client, lead.id, "matrix_sent", { source: "evolution", automated: true });
@@ -100,13 +101,60 @@ async function deliverMatrixForLead(client: NonNullable<ReturnType<typeof create
   return sent;
 }
 
-export async function deliverWelcomeForLead(lead: { id: string; name: string; whatsapp_e164: string }) {
+async function scheduleMatrixForLead(client: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, lead: { id: string; whatsapp_e164: string }) {
+  const { data: existing, error: existingError } = await client.from("whatsapp_outbound_messages").select("id,status,scheduled_for").eq("lead_id", lead.id).eq("kind", "matrix").maybeSingle();
+  if (existingError) throw new Error("matrix_schedule_lookup_failed");
+  if (existing) return { scheduled: false, duplicate: true, scheduledFor: existing.scheduled_for || null };
+  const scheduledFor = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+  const { data: inserted, error } = await client.from("whatsapp_outbound_messages").upsert({ lead_id: lead.id, kind: "matrix", recipient_e164: lead.whatsapp_e164, status: "pending", scheduled_for: scheduledFor, attempt_count: 0, error_code: null }, { onConflict: "lead_id,kind", ignoreDuplicates: true }).select("id,scheduled_for").maybeSingle();
+  if (error) throw new Error("matrix_schedule_failed");
+  return { scheduled: Boolean(inserted), duplicate: !inserted, scheduledFor: inserted?.scheduled_for || scheduledFor };
+}
+
+async function processClaimedMatrix(client: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, row: { id: string; lead_id: string; recipient_e164: string; attempt_count: number }) {
+  const { data: lead, error: leadError } = await client.from("leads").select("id,name").eq("id", row.lead_id).eq("cohort_id", COHORT_ID).maybeSingle();
+  if (leadError || !lead) {
+    await client.from("whatsapp_outbound_messages").update({ status: "failed", error_code: "lead_not_found", claimed_at: null }).eq("id", row.id).eq("status", "attempting");
+    return { status: "failed" as const, reason: "lead_not_found" };
+  }
+  try {
+    const response = await sendEvolutionText(row.recipient_e164, buildOperationalMatrixText(matrixLink()));
+    const responseKey = typeof response.key === "object" && response.key ? response.key as Record<string, unknown> : null;
+    const nestedMessage = typeof response.message === "object" && response.message ? response.message as Record<string, unknown> : null;
+    const nestedKey = nestedMessage && typeof nestedMessage.key === "object" && nestedMessage.key ? nestedMessage.key as Record<string, unknown> : null;
+    const providerId = String(responseKey?.id || nestedKey?.id || response.id || "");
+    const providerStatus = String(response.status || response.state || "").toUpperCase();
+    if (!providerId || ["ERROR", "FAILED", "REJECTED"].includes(providerStatus)) {
+      await client.from("whatsapp_outbound_messages").update({ status: "failed", error_code: "evolution_acceptance_unconfirmed", claimed_at: null }).eq("id", row.id).eq("status", "attempting");
+      return { status: "failed" as const, reason: "evolution_acceptance_unconfirmed" };
+    }
+    await client.from("whatsapp_outbound_messages").update({ status: "sent", provider_message_id: providerId, sent_at: new Date().toISOString(), claimed_at: null, error_code: null }).eq("id", row.id).eq("status", "attempting");
+    await recordEvent(client, lead.id, "matrix_sent", { source: "evolution", automated: true });
+    return { status: "sent" as const, providerMessageId: providerId };
+  } catch {
+    const terminal = row.attempt_count >= 3;
+    await client.from("whatsapp_outbound_messages").update({ status: terminal ? "failed" : "pending", scheduled_for: terminal ? null : new Date(Date.now() + row.attempt_count * 5 * 60 * 1000).toISOString(), claimed_at: null, error_code: "evolution_send_failed" }).eq("id", row.id).eq("status", "attempting");
+    return { status: terminal ? "failed" as const : "retry_scheduled" as const, reason: "evolution_send_failed" };
+  }
+}
+
+export async function processDueWhatsAppDeliveries() {
+  const client = createSupabaseAdminClient();
+  if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
+  const { data: rows, error } = await client.rpc("claim_due_whatsapp_messages", { p_limit: 20 });
+  if (error) throw new Error("due_message_claim_failed");
+  const results = [];
+  for (const row of rows || []) results.push(await processClaimedMatrix(client, row));
+  return { claimed: rows?.length || 0, results };
+}
+
+export async function deliverWelcomeForLead(lead: { id: string; name: string; whatsapp_e164: string }, options: ScheduleOptions = {}) {
   const client = createSupabaseAdminClient();
   if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
   const groupLink = await getConfiguredGroupLink(client);
-  const welcome = await sendOnce(client, lead, lead.whatsapp_e164, "welcome", buildOperationalWelcomeText(lead.name, groupLink, matrixLink()));
-  if (welcome.sent) await recordEvent(client, lead.id, "gift_included_in_welcome", { source: "evolution", automated: true });
-  return { welcome, matrix: null };
+  const welcome = await sendOnce(client, lead, lead.whatsapp_e164, "welcome", buildOperationalWelcomeText(lead.name, groupLink));
+  const matrix = (welcome.sent || welcome.duplicate) && options.scheduleMatrix ? await scheduleMatrixForLead(client, lead) : null;
+  return { welcome, matrix };
 }
 
 export async function recoverPendingWelcomeDeliveries() {
@@ -158,7 +206,8 @@ export async function recoverMatrixForRegistration(registrationCode: string) {
   const { data: welcome, error: welcomeError } = await client.from("whatsapp_outbound_messages").select("status").eq("lead_id", lead.id).eq("kind", "welcome").maybeSingle();
   if (welcomeError) throw new Error("welcome_state_lookup_failed");
   if (welcome?.status !== "sent") throw new Error("welcome_not_accepted");
-  return { registrationCode, matrix: { sent: false, duplicate: true, pending: false, providerMessageId: null }, reason: "matrix_included_in_welcome" as const };
+  const result = await deliverMatrixForLead(client, lead, lead.whatsapp_e164);
+  return { registrationCode, matrix: result, reason: "manual_recovery" as const };
 }
 
 export async function recoverPendingMatrixDeliveries() {
@@ -248,10 +297,8 @@ export async function processEvolutionMessage(payload: unknown) {
   const { error: inboundError } = await client.from("whatsapp_inbound_messages").insert({ provider_message_id: message.providerMessageId, instance_name: INSTANCE, sender_jid: message.senderJid, sender_e164: message.senderE164 || null, lead_id: lead.id, event_name: message.eventName, message_kind: "text", message_hash: createHash("sha256").update(message.text).digest("hex"), action: listo ? "listo_pending_group_verification" : "identified", error_code: null, processed_at: new Date().toISOString() });
   if (inboundError) throw new Error("inbound_persistence_failed");
 
-  const groupLink = await getConfiguredGroupLink(client);
-  const welcome = await sendOnce(client, lead, message.senderJid, "welcome", buildOperationalWelcomeText(lead.name, groupLink, matrixLink()));
   await recordEvent(client, lead.id, "conversation_confirmed", { source: "evolution", automated: true });
   await recordEvent(client, lead.id, "whatsapp_clicked", { source: "evolution", automated: true });
   if (listo) await recordEvent(client, lead.id, "group_join_declared", { source: "whatsapp", automated: false });
-  return { action: welcome.sent ? "welcomed" as const : "access_already_delivered" as const, welcomeDuplicate: welcome.duplicate };
+  return { action: "identified" as const, welcomeDuplicate: false };
 }

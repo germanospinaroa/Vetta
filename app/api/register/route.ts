@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     let operationalDelivery: "accepted" | "pending" | "failed" = "pending";
     if (!config.demoMode && !qa && "id" in lead && "whatsappE164" in lead) {
       try {
-        const delivery = await deliverWelcomeForLead({ id: lead.id, name: lead.name, whatsapp_e164: lead.whatsappE164 });
+        const delivery = await deliverWelcomeForLead({ id: lead.id, name: lead.name, whatsapp_e164: lead.whatsappE164 }, { scheduleMatrix: true });
         operationalDelivery = delivery.welcome.sent || delivery.welcome.duplicate ? "accepted" : "pending";
       } catch {
         operationalDelivery = "failed";

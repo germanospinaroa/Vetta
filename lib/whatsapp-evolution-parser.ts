@@ -21,9 +21,13 @@ export function extractRegistrationCode(value: unknown): string | null {
   return match?.[1]?.toUpperCase() || null;
 }
 
-export function buildOperationalWelcomeText(name: string, groupLink: string, matrixUrl: string) {
+export function buildOperationalWelcomeText(name: string, groupLink: string) {
   const firstName = name.trim().split(/\s+/)[0] || name;
-  return `¡Hola, ${firstName}! 👋 Bienvenido a *NO EMPRENDAS TODAVÍA*.\n\nTu inscripción está confirmada. 🎉\n\n👥 *Únete a nuestro grupo privado*, donde compartiremos los accesos a los encuentros:\n${groupLink}\n\n🎁 *Tu regalo: EL FILTRO ANTES DEL SÍ*\nDescubre qué deberías revisar antes de elegir una oportunidad:\n${matrixUrl}\n\n📅 Nos vemos el 20 y 22 de octubre, a las 8:00 p. m. (Colombia).\n\n¡Nos vemos pronto!`;
+  return `¡Hola, ${firstName}! 👋\n\n¡Bienvenido a *NO EMPRENDAS TODAVÍA*! 🎉\n\nTu inscripción está confirmada.\n\nTenemos dos encuentros preparados para abrir nuevas perspectivas y explorar otras posibilidades de emprender.\n\n📅 *20 y 22 de octubre*\n🕗 *8:00 p. m. · Hora de Colombia*\n\nLo primero es unirte a nuestro grupo privado. Allí compartiremos los accesos a los encuentros y las novedades importantes.\n\n👇 *Ingresa aquí:*\n${groupLink}\n\n¡Nos vemos dentro! 🚀`;
+}
+
+export function buildOperationalMatrixText(matrixUrl: string) {
+  return `🎁 *¡Y ahora sí, un regalo para ti!*\n\nAntes de elegir una oportunidad, hay preguntas que vale la pena hacerse.\n\nPor eso preparamos *EL FILTRO ANTES DEL SÍ*, una herramienta interactiva que analiza tus respuestas y te ayuda a descubrir qué tienes a favor, qué necesitas revisar y cuáles podrían ser tus siguientes pasos.\n\n✨ No importa si ya tienes una oportunidad en mente o si apenas estás explorando.\n\n👇 *Descubre tu diagnóstico:*\n${matrixUrl}`;
 }
 
 export function validateWhatsAppGroupUrl(value: unknown) {

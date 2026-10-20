@@ -4,7 +4,7 @@ import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
 import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, isConfirmedNewRegistration, shouldTrackPageView, trackNewMetaLead } from "../lib/analytics";
 import { isDuplicateRegistrationConstraint } from "../lib/registration-dedupe";
-import { buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, extractRegistrationCode, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
+import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, extractRegistrationCode, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
 import { defaultAnswers, diagnoseExploration, diagnoseOpportunity } from "../lib/matrix-diagnostic";
 
 describe("VETTA registration contract", () => {
@@ -150,12 +150,15 @@ describe("VETTA registration contract", () => {
     expect(message.registrationCode).toBe("VETTA-96378DDC");
   });
 
-  it("builds one human welcome containing both operational links and dates", () => {
-    const text = buildOperationalWelcomeText("Genubath Roa", "https://chat.whatsapp.com/example", "https://noemprendas.gritlab.pro/matriz");
+  it("keeps the welcome and gift as separate messages with one link each", () => {
+    const text = buildOperationalWelcomeText("Genubath Roa", "https://chat.whatsapp.com/example");
     expect(text).toContain("https://chat.whatsapp.com/example");
-    expect(text).toContain("https://noemprendas.gritlab.pro/matriz");
     expect(text).toContain("20 y 22 de octubre");
     expect(text).not.toContain("accesos operativos");
+    expect(text).not.toContain("/matriz");
+    const gift = buildOperationalMatrixText("https://noemprendas.gritlab.pro/matriz");
+    expect(gift).toContain("https://noemprendas.gritlab.pro/matriz");
+    expect(gift).not.toContain("chat.whatsapp.com");
   });
 
   it("accepts only the configured group and preserves unverifiable LIDs", () => {
