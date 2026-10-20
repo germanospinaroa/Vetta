@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
-import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
+import { buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
 import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, applyVendorConsent, isConfirmedNewRegistration, markMetaPixelScriptReady, setAdvertisingConsent, shouldTrackPageView, trackMetaWhatsAppClick, trackNewMetaLead } from "../lib/analytics";
 import { isDuplicateRegistrationConstraint } from "../lib/registration-dedupe";
@@ -105,18 +105,18 @@ describe("VETTA registration contract", () => {
   });
 
   it("keeps WhatsApp click separate and does not include the phone", () => {
-    const href = buildWhatsAppHref("573001234567", "Ana", "VETTA-ABC123");
+    const href = buildWhatsAppHref("573001234567", "Ana", "VETTA-ABC12345");
     expect(href).toContain("wa.me/573001234567");
-    expect(decodeURIComponent(href || "")).toContain("Mi código es VETTA-ABC123");
+    expect(decodeURIComponent(href || "")).toContain("Mi código es VETTA-ABC12345");
     expect(decodeURIComponent((href || "").split("?text=")[1] || "")).not.toContain("3001234567");
   });
 
-  it("builds a generic continuation message without exposing an existing code", () => {
-    const href = buildGenericWhatsAppHref("573001234567");
+  it("never builds a WhatsApp confirmation link without a valid VETTA code", () => {
+    expect(buildWhatsAppHref("573001234567", "Ana", "")).toBeUndefined();
+    expect(buildWhatsAppHref("573001234567", "Ana", "VETTA-INVALID")).toBeUndefined();
+    const href = buildWhatsAppHref("573001234567", "Ana", "VETTA-ABC12345");
     const message = decodeURIComponent((href || "").split("?text=")[1] || "");
-    expect(message).toContain("continuando mi registro");
-    expect(message).not.toContain("VETTA-");
-    expect(message).not.toContain("573001234567");
+    expect(message).toContain("Mi código es VETTA-ABC12345");
   });
 
   it("only accepts the three defined campaign territories", () => {

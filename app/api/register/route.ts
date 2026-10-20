@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getPublicConfig } from "@/lib/config";
 import { saveDemoLead } from "@/lib/demo-store";
-import { buildGenericWhatsAppHref, buildWhatsAppHref } from "@/lib/whatsapp";
-import { persistRegistration } from "@/lib/persistence";
+import { buildWhatsAppHref } from "@/lib/whatsapp";
+import { findRegistrationForRecovery, persistRegistration } from "@/lib/persistence";
 import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
 import { createConfirmationToken } from "@/lib/confirmation";
 import { cookies } from "next/headers";
@@ -30,7 +30,11 @@ export async function POST(request: Request) {
     try { lead = config.demoMode ? saveDemoLead(parsed.data, normalizedPhone, config.cohort.id) : await persistRegistration(parsed.data, normalizedPhone, { qa }); }
     catch (error) {
       if (error instanceof Error && error.message === "duplicate_registration") {
-        return NextResponse.json({ ok: true, existing: true, newRegistration: false, mode: config.demoMode ? "TEST" : "LIVE", whatsappHref: buildGenericWhatsAppHref(config.whatsappNumber) });
+        const existing = config.demoMode ? null : await findRegistrationForRecovery(parsed.data, normalizedPhone, config.cohort.id);
+        if (!existing) return NextResponse.json({ ok: false, code: "existing_registration_recovery_required", message: "Ya existe una inscripción con esos datos, pero no pudimos verificar la recuperación. Solicita ayuda a soporte." }, { status: 409 });
+        const response = NextResponse.json({ ok: true, existing: true, newRegistration: false, mode: "LIVE", registrationCode: existing.registrationCode, firstName: existing.name.trim().split(/\s+/)[0], whatsappHref: buildWhatsAppHref(config.whatsappNumber, existing.name, existing.registrationCode) });
+        response.cookies.set("vetta_registration_confirmation", createConfirmationToken(existing.registrationCode, config.cohort.id), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/confirmacion", maxAge: 1800 });
+        return response;
       }
       return NextResponse.json({ ok: false, code: "persistence_error", message: "No pudimos guardar tu registro. Inténtalo de nuevo." }, { status: 503 });
     }

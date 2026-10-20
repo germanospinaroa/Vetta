@@ -70,6 +70,16 @@ export async function findPersistedRegistration(registrationCode: string, cohort
   return { registrationCode: data.registration_code, name: data.name };
 }
 
+export async function findRegistrationForRecovery(input: { name: string; city: string; country: string }, normalizedPhone: string, cohortId: string) {
+  const client = createSupabaseAdminClient();
+  if (!client) return null;
+  const { data, error } = await client.from("leads").select("registration_code,name,city,country_code").eq("cohort_id", cohortId).eq("whatsapp_e164", normalizedPhone).maybeSingle();
+  if (error || !data) return null;
+  const same = (left: string, right: string) => left.trim().localeCompare(right.trim(), "es", { sensitivity: "base" }) === 0;
+  if (!same(data.name, input.name) || !same(data.city, input.city) || data.country_code !== input.country) return null;
+  return { registrationCode: data.registration_code, name: data.name };
+}
+
 export async function persistPublicEvent(event: { name: string; registrationCode?: string; cohortId?: string; properties?: Record<string, string | number | boolean> }) {
   const client = createSupabaseAdminClient();
   if (!client) return false;

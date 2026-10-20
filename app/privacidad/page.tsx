@@ -30,7 +30,7 @@ export default function PrivacyPage() {
         <h2>Datos tratados y tipo de tratamiento</h2>
         <p>El tratamiento es manual y automatizado, y puede incluir recolección, almacenamiento, consulta, organización, circulación controlada, registro, envío a proveedores y supresión cuando corresponda.</p>
         <p>Para gestionar la inscripción se tratan nombre, número de WhatsApp, ciudad, país, código de registro, consentimiento, fecha de registro y parámetros UTM cuando estén presentes.</p>
-        <p>La operación de WhatsApp mediante Evolution API puede tratar el número remitente, identificadores de WhatsApp, identificadores de proveedor, tipo de mensaje, fecha, estado de procesamiento, hash del mensaje y acciones operativas. El sistema reconoce mensajes como <strong>LISTO</strong>, relaciona el remitente con una inscripción, registra eventos operativos y puede enviar automáticamente mensajes de bienvenida y el enlace de la matriz mediante la instancia de WhatsApp configurada en Evolution API.</p>
+        <p>La operación de WhatsApp mediante Evolution API puede tratar el número remitente, identificadores de WhatsApp, identificadores de proveedor, tipo de mensaje, fecha, estado de procesamiento, hash del mensaje y acciones operativas. El sistema valida el código de inscripción recibido, relaciona la conversación con una inscripción, registra eventos operativos y puede enviar automáticamente mensajes de bienvenida y el enlace de la matriz mediante la instancia de WhatsApp configurada en Evolution API.</p>
         <p>La matriz funciona localmente en el dispositivo. Sus respuestas y resultados no se envían a Supabase ni se incluyen como propiedades de eventos de analítica.</p>
 
         <h2>Finalidades</h2>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
           <li>Recibir, validar y gestionar inscripciones.</li>
           <li>Crear un registro operativo y asignar un código.</li>
           <li>Enviar comunicaciones operativas relacionadas con la experiencia.</li>
-          <li>Procesar mensajes entrantes mediante Evolution API, reconocer <strong>LISTO</strong>, registrar acciones y entregar automáticamente la matriz cuando corresponda.</li>
+          <li>Procesar mensajes entrantes mediante Evolution API, validar códigos de inscripción, registrar acciones y entregar automáticamente la matriz cuando corresponda.</li>
           <li>Conservar atribución UTM cuando exista.</li>
           <li>Registrar eventos operativos necesarios para administrar la experiencia.</li>
           <li>Medir conversiones publicitarias mediante Meta Pixel, identificador <strong>3337529346452736</strong>, solo con permiso publicitario.</li>

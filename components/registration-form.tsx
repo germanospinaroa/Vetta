@@ -108,7 +108,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         ) : (
           <p className="config-note">Configuración TEST pendiente: el número oficial de WhatsApp todavía no está configurado.</p>
         )}
-        <p className="success-gift-note">🎁 Una vez dentro del grupo, responde <strong>LISTO</strong> en nuestro chat privado y recibirás <strong>EL FILTRO ANTES DEL SÍ</strong>.</p>
+        <p className="success-gift-note">🎁 Después de validar tu código, recibirás la bienvenida con el enlace del grupo y, aproximadamente dos minutos después, <strong>EL FILTRO ANTES DEL SÍ</strong>.</p>
         <button className="text-button" type="button" onClick={() => { setState("idle"); setResult(null); }}>Registrar otra persona</button>
       </div>
     );
