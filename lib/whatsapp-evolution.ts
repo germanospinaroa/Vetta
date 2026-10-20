@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { getPublicConfig } from "@/lib/config";
-import { sendEvolutionText } from "@/lib/evolution";
+import { fetchEvolutionGroupParticipants, sendEvolutionText } from "@/lib/evolution";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, matchesConfiguredEvolutionGroup, validateWhatsAppGroupUrl } from "@/lib/whatsapp-evolution-parser";
+import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipants, matchesConfiguredEvolutionGroup, validateWhatsAppGroupUrl } from "@/lib/whatsapp-evolution-parser";
 
 const COHORT_ID = process.env.NEXT_PUBLIC_ACTIVE_COHORT_ID;
 const INSTANCE = process.env.EVOLUTION_INSTANCE || "momentum";
@@ -26,6 +26,58 @@ function matrixLink() {
 
 type EvolutionLead = { id: string; name: string; whatsapp_e164: string; registration_code: string };
 type ScheduleOptions = { scheduleMatrix?: boolean };
+
+export type GroupMembershipStatus = "CONFIRMADO" | "NO ENCONTRADO" | "NO VERIFICABLE";
+
+export async function getGroupMembershipReport() {
+  const client = createSupabaseAdminClient();
+  if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
+  const configuredGroup = process.env.VETTA_GROUP_JID?.trim();
+  if (!configuredGroup) throw new Error("group_jid_configuration_unavailable");
+  const [{ data: leads, error: leadsError }, { data: events, error: eventsError }] = await Promise.all([
+    client.from("leads").select("id,name,whatsapp_e164,registration_code").eq("cohort_id", COHORT_ID).order("created_at", { ascending: true }),
+    client.from("lead_events").select("lead_id,properties").eq("cohort_id", COHORT_ID).eq("name", "group_join_verified"),
+  ]);
+  if (leadsError || eventsError) throw new Error("group_membership_lookup_failed");
+  let participantResult: ReturnType<typeof extractEvolutionParticipants> = [];
+  let providerReachable = true;
+  try {
+    participantResult = extractEvolutionParticipants(await fetchEvolutionGroupParticipants(configuredGroup));
+  } catch {
+    providerReachable = false;
+  }
+  const manual = new Set((events || []).filter((event) => {
+    const properties = event.properties && typeof event.properties === "object" ? event.properties as Record<string, unknown> : {};
+    return properties.verification_method === "manual";
+  }).map((event) => String(event.lead_id)));
+  const participantPhones = new Set(participantResult.map((participant) => participant.phoneE164).filter((phone): phone is string => Boolean(phone)));
+  const unresolvedIdentifiers = participantResult.some((participant) => !participant.phoneE164 && /@lid$/i.test(`${participant.id || ""} ${participant.jid || ""}`));
+  const rows = (leads || []).map((lead) => {
+    const leadId = String(lead.id);
+    const automaticMatch = participantPhones.has(String(lead.whatsapp_e164));
+    let status: GroupMembershipStatus = "NO ENCONTRADO";
+    let method: "evolution_phone" | "manual" | null = null;
+    if (manual.has(leadId)) { status = "CONFIRMADO"; method = "manual"; }
+    else if (automaticMatch) { status = "CONFIRMADO"; method = "evolution_phone"; }
+    else if (!providerReachable || unresolvedIdentifiers) status = "NO VERIFICABLE";
+    return { id: leadId, name: lead.name, registrationCode: lead.registration_code, status, method };
+  });
+  return { groupJid: configuredGroup, providerReachable, participantCount: participantResult.length, unresolvedIdentifiers, rows };
+}
+
+export async function recordManualGroupConfirmation(leadId: string) {
+  const client = createSupabaseAdminClient();
+  if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
+  const { data: lead, error: leadError } = await client.from("leads").select("id").eq("id", leadId).eq("cohort_id", COHORT_ID).maybeSingle();
+  if (leadError) throw new Error("lead_lookup_failed");
+  if (!lead) throw new Error("lead_not_found");
+  const { data: existing, error: existingError } = await client.from("lead_events").select("id").eq("lead_id", leadId).eq("cohort_id", COHORT_ID).eq("name", "group_join_verified").contains("properties", { verification_method: "manual" }).limit(1);
+  if (existingError) throw new Error("manual_confirmation_lookup_failed");
+  if (existing?.length) return { recorded: false, duplicate: true };
+  const { error } = await client.from("lead_events").insert({ lead_id: leadId, cohort_id: COHORT_ID, name: "group_join_verified", properties: { source: "operator", automated: false, verification_method: "manual" } });
+  if (error) throw new Error("manual_confirmation_failed");
+  return { recorded: true, duplicate: false };
+}
 type ConversationResolution = { lead: EvolutionLead | null; reason: "linked" | "code_linked" | "code_not_found" | "code_already_linked" | "rate_limited" | "conversation_not_found" };
 const CODE_ATTEMPT_LIMIT = 10;
 

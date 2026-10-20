@@ -4,7 +4,7 @@ import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
 import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, isConfirmedNewRegistration, shouldTrackPageView, trackNewMetaLead } from "../lib/analytics";
 import { isDuplicateRegistrationConstraint } from "../lib/registration-dedupe";
-import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, extractRegistrationCode, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
+import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, extractEvolutionParticipants, extractRegistrationCode, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
 import { defaultAnswers, diagnoseExploration, diagnoseOpportunity } from "../lib/matrix-diagnostic";
 
 describe("VETTA registration contract", () => {
@@ -168,6 +168,19 @@ describe("VETTA registration contract", () => {
     expect(matchesConfiguredEvolutionGroup(group.groupJid, "120363430193664827@g.us")).toBe(false);
     expect(group.participants[0]?.phoneE164).toBeNull();
     expect(group.participants[1]?.phoneE164).toBe("+573001234567");
+  });
+
+  it("normalizes real participant response variants without treating an unresolved LID as absent", () => {
+    const participants = extractEvolutionParticipants({ data: { participants: [
+      { id: "573001234567@s.whatsapp.net" },
+      { id: "573001234568@s.whatsapp.net", remoteJidAlt: "573001234568@s.whatsapp.net" },
+      { id: "987654321@lid" },
+    ] } });
+    expect(participants).toHaveLength(3);
+    expect(participants[0]?.phoneE164).toBe("+573001234567");
+    expect(participants[1]?.phoneE164).toBe("+573001234568");
+    expect(participants[2]?.phoneE164).toBeNull();
+    expect(participants[2]?.id).toBe("987654321@lid");
   });
 
   it("only accepts a non-empty WhatsApp invitation URL", () => {

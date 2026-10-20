@@ -50,11 +50,40 @@ export type EvolutionParticipantIdentity = {
 export function extractEvolutionParticipant(value: unknown): EvolutionParticipantIdentity {
   const item = asRecord(value);
   const id = typeof item.id === "string" ? item.id : null;
-  const jid = typeof item.jid === "string" ? item.jid : null;
-  const phoneE164 = normalizeWhatsAppSender(item.phoneNumber)
+  const jid = firstString(item.jid, item.remoteJid, item.remote_jid);
+  const phoneE164 = normalizeWhatsAppSender(item.id)
+    || normalizeWhatsAppSender(item.jid)
+    || normalizeWhatsAppSender(item.remoteJid)
+    || normalizeWhatsAppSender(item.phoneNumber)
     || normalizeWhatsAppSender(item.number)
-    || normalizeWhatsAppSender(item.phone);
+    || normalizeWhatsAppSender(item.phone)
+    || normalizeWhatsAppSender(item.pn)
+    || normalizeWhatsAppSender(item.senderPn)
+    || normalizeWhatsAppSender(item.sender_pn)
+    || normalizeWhatsAppSender(item.remoteJidAlt)
+    || normalizeWhatsAppSender(item.remote_jid_alt);
   return { phoneE164, id, jid };
+}
+
+export function extractEvolutionParticipants(value: unknown): EvolutionParticipantIdentity[] {
+  const root = asRecord(value);
+  const candidates = Array.isArray(value)
+    ? value
+    : Array.isArray(root.participants)
+      ? root.participants
+      : Array.isArray(root.data)
+        ? root.data
+        : Array.isArray(asRecord(root.data).participants)
+          ? asRecord(root.data).participants
+          : [];
+  const candidateList = candidates as unknown[];
+  const seen = new Set<string>();
+  return candidateList.map(extractEvolutionParticipant).filter((participant) => {
+    const key = participant.id || participant.jid || participant.phoneE164;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export function extractEvolutionGroupData(payload: unknown) {

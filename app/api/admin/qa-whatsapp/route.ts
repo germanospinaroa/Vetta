@@ -4,7 +4,7 @@ import { getPublicConfig } from "@/lib/config";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { persistQaRegistration } from "@/lib/persistence";
 import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
-import { recoverMatrixForRegistration, recoverPendingMatrixDeliveries, recoverPendingWelcomeDeliveries, recoverWelcomeForRegistration } from "@/lib/whatsapp-evolution";
+import { getGroupMembershipReport, recordManualGroupConfirmation, recoverMatrixForRegistration, recoverPendingMatrixDeliveries, recoverPendingWelcomeDeliveries, recoverWelcomeForRegistration } from "@/lib/whatsapp-evolution";
 
 export const runtime = "nodejs";
 
@@ -41,6 +41,14 @@ export async function POST(request: Request) {
     }
     const admin = await getAuthorizedAdmin("admin");
     if (!admin) return NextResponse.json({ ok: false, code: "unauthorized" }, { status: 401 });
+    if (body?.action === "verify_group_members") {
+      const result = await getGroupMembershipReport();
+      return NextResponse.json({ ok: true, verification: result }, { headers: { "cache-control": "no-store" } });
+    }
+    if (body?.action === "confirm_group_membership_manual" && typeof body.leadId === "string") {
+      const result = await recordManualGroupConfirmation(body.leadId.trim());
+      return NextResponse.json({ ok: true, confirmation: result }, { headers: { "cache-control": "no-store" } });
+    }
     if (body?.action === "recover_pending_matrix") {
       const result = await recoverPendingMatrixDeliveries();
       return NextResponse.json({ ok: true, recovery: result });
