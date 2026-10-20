@@ -16,6 +16,10 @@ export const registrationSchema = z.object({
   utm_campaign: z.string().trim().max(100).optional().default(""),
   utm_content: z.string().trim().max(100).optional().default(""),
   utm_term: z.string().trim().max(100).optional().default(""),
+  fbclid: z.string().trim().max(200).optional().default(""),
+  fbp: z.string().trim().max(200).optional().default(""),
+  fbc: z.string().trim().max(200).optional().default(""),
+  advertisingConsent: z.enum(["granted", "denied"]).optional().default("denied"),
 });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;

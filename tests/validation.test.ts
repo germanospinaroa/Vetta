@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
-import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, isConfirmedNewRegistration, shouldTrackPageView, trackNewMetaLead } from "../lib/analytics";
+import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, isConfirmedNewRegistration, shouldTrackPageView, trackMetaWhatsAppClick, trackNewMetaLead } from "../lib/analytics";
 import { isDuplicateRegistrationConstraint } from "../lib/registration-dedupe";
 import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, extractEvolutionParticipants, extractRegistrationCode, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
 import { defaultAnswers, diagnoseExploration, diagnoseOpportunity } from "../lib/matrix-diagnostic";
@@ -45,6 +45,18 @@ describe("VETTA registration contract", () => {
     expect(trackNewMetaLead("VETTA-MOCK-1")).toBe(false);
     expect(calls).toHaveLength(1);
     expect(calls[0]?.[1]).toBe("Lead");
+    Object.defineProperty(globalThis, "window", { configurable: true, value: previousWindow });
+  });
+
+  it("uses the server event id for Meta Lead and keeps WhatsAppClick separate", () => {
+    const previousWindow = globalThis.window;
+    const calls: unknown[][] = [];
+    Object.defineProperty(globalThis, "window", { configurable: true, value: { localStorage: mockStorage({ [ADVERTISING_CONSENT_KEY]: "granted" }), sessionStorage: mockStorage(), fbq: (...args: unknown[]) => calls.push(args) } });
+    expect(trackNewMetaLead("VETTA-MOCK-3", "lead-event-3")).toBe(true);
+    expect(trackMetaWhatsAppClick()).toBe(true);
+    expect(calls[0]?.[3]).toEqual({ eventID: "lead-event-3" });
+    expect(calls[1]?.[0]).toBe("trackCustom");
+    expect(calls[1]?.[1]).toBe("WhatsAppClick");
     Object.defineProperty(globalThis, "window", { configurable: true, value: previousWindow });
   });
 

@@ -3,8 +3,8 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCountries, getCountryCallingCode } from "libphonenumber-js";
-import { readAttribution } from "@/lib/tracking";
-import { isConfirmedNewRegistration, queueMetaLeadUntilConsent, trackClarityEvent, trackNewMetaLead } from "@/lib/analytics";
+import { readAttribution, readMetaAttribution } from "@/lib/tracking";
+import { advertisingConsentGranted, isConfirmedNewRegistration, queueMetaLeadUntilConsent, trackClarityEvent, trackMetaWhatsAppClick, trackNewMetaLead } from "@/lib/analytics";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
@@ -13,7 +13,7 @@ const countries = getCountries()
   .map((code) => [code, regionNames.of(code) || code] as const)
   .sort((a, b) => a[1].localeCompare(b[1], "es"));
 
-type Result = { ok: true; registrationCode?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean; newRegistration?: boolean; firstName?: string } | { ok: false; message: string };
+type Result = { ok: true; registrationCode?: string; metaEventId?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean; newRegistration?: boolean; firstName?: string } | { ok: false; message: string };
 
 export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSuccess?: boolean }) {
   const router = useRouter();
@@ -25,7 +25,9 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
 
   useEffect(() => {
     const attribution = readAttribution(window.location.search);
-    if (Object.values(attribution).some(Boolean)) window.localStorage.setItem("vetta-attribution-v1", JSON.stringify(attribution));
+    const metaAttribution = readMetaAttribution();
+    const combined = { ...attribution, ...metaAttribution };
+    if (Object.values(combined).some(Boolean)) window.localStorage.setItem("vetta-attribution-v1", JSON.stringify(combined));
   }, []);
 
   function markStarted() {
@@ -45,11 +47,15 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     let storedAttribution: Record<string, string> = {};
     try {
       const stored = JSON.parse(window.localStorage.getItem("vetta-attribution-v1") || "{}") as Record<string, unknown>;
-      storedAttribution = Object.fromEntries(Object.entries(stored).filter(([key, value]) => key.startsWith("utm_") && typeof value === "string")) as Record<string, string>;
+      storedAttribution = Object.fromEntries(Object.entries(stored).filter(([key, value]) => (key.startsWith("utm_") || ["fbclid", "fbp", "fbc"].includes(key)) && typeof value === "string")) as Record<string, string>;
     } catch {
       storedAttribution = {};
     }
-    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) payload[key] = queryAttribution[key as keyof typeof queryAttribution] || storedAttribution[key] || "";
+    const metaAttribution = readMetaAttribution();
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid"]) payload[key] = queryAttribution[key as keyof typeof queryAttribution] || storedAttribution[key] || "";
+    payload.fbp = metaAttribution.fbp || storedAttribution.fbp || "";
+    payload.fbc = metaAttribution.fbc || storedAttribution.fbc || "";
+    payload.advertisingConsent = advertisingConsentGranted() ? "granted" : "denied";
     payload.consentVersion = "v1";
 
     try {
@@ -64,7 +70,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
       }
       if (isConfirmedNewRegistration(data)) {
         const registrationCode = data.registrationCode as string;
-        if (!trackNewMetaLead(registrationCode)) queueMetaLeadUntilConsent(registrationCode);
+        if (!trackNewMetaLead(registrationCode, data.metaEventId)) queueMetaLeadUntilConsent(registrationCode, data.metaEventId);
         trackClarityEvent("registration_confirmed");
       }
       if (redirectOnSuccess && !data.existing && data.registrationCode) {
@@ -94,7 +100,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         <p>Pulsa el botón, envíanos el mensaje por WhatsApp y te compartiremos el enlace para unirte.</p>
         {result.registrationCode && <div className="registration-code"><span>Código</span><strong>{result.registrationCode}</strong></div>}
         {result.whatsappHref ? (
-          <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => { trackClarityEvent("whatsapp_clicked"); const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
+          <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => { trackMetaWhatsAppClick(); trackClarityEvent("whatsapp_clicked"); const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
             CONTINUAR POR WHATSAPP <span aria-hidden="true">↗</span>
           </a>
         ) : (

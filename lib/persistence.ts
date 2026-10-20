@@ -24,7 +24,7 @@ export async function persistRegistration(input: RegistrationInput, normalizedPh
     throw new Error("registration_persistence_failed");
   }
   if (!lead) throw new Error("registration_persistence_failed");
-  const { error: attributionError } = await client.from("campaign_attribution").insert({ lead_id: lead.id, utm_source: input.utm_source || null, utm_medium: input.utm_medium || null, utm_campaign: input.utm_campaign || null, utm_content: input.utm_content || null, utm_term: input.utm_term || null, territory: territoryFromCampaign(input.utm_campaign) });
+  const { error: attributionError } = await client.from("campaign_attribution").insert({ lead_id: lead.id, utm_source: input.utm_source || null, utm_medium: input.utm_medium || null, utm_campaign: input.utm_campaign || null, utm_content: input.utm_content || null, utm_term: input.utm_term || null, fbclid: input.fbclid || null, fbp: input.fbp || null, fbc: input.fbc || null, territory: territoryFromCampaign(input.utm_campaign) });
   if (attributionError) throw new Error("attribution_persistence_failed");
   const consentRows = [{ lead_id: lead.id, consent_version: input.consentVersion, consent_type: options.qa ? "experience_communications_qa" : "experience_communications" }];
   if (input.consent_marketing === "on") consentRows.push({ lead_id: lead.id, consent_version: input.consentVersion, consent_type: "optional_marketing" });

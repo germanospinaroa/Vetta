@@ -16,3 +16,7 @@ código. Está preparada para aplicarse como migración independiente y aún no
 debe considerarse aplicada en Production hasta verificarla allí. No crea otro
 cron: hace inelegibles para envío los trabajos históricos que no tienen
 `conversation_id` y `recipient_jid`.
+
+La migración `0007_meta_attribution.sql` añade únicamente columnas opcionales
+para `fbclid`, `fbp` y `fbc` en `campaign_attribution`. Debe aplicarse de forma
+coordinada con el despliegue que consume esos campos.

@@ -78,25 +78,40 @@ export function trackMetaPageView() {
   ensureMetaQueue()?.("track", "PageView");
 }
 
-export function trackNewMetaLead(registrationCode: string) {
+export function trackNewMetaLead(registrationCode: string, eventId?: string) {
   if (!advertisingConsentGranted() || typeof window === "undefined" || !registrationCode) return false;
   const dedupeKey = `vetta-meta-lead:${registrationCode}`;
   if (window.localStorage.getItem(dedupeKey) === "sent") return false;
-  ensureMetaQueue()?.("track", "Lead", { content_name: "NO EMPRENDAS TODAVÍA." }, { eventID: dedupeKey });
+  ensureMetaQueue()?.("track", "Lead", { content_name: "NO EMPRENDAS TODAVÍA." }, { eventID: eventId || dedupeKey });
   window.localStorage.setItem(dedupeKey, "sent");
   return true;
 }
 
-export function queueMetaLeadUntilConsent(registrationCode: string) {
+export function trackMetaWhatsAppClick() {
+  if (!advertisingConsentGranted() || typeof window === "undefined") return false;
+  ensureMetaQueue()?.("trackCustom", "WhatsAppClick");
+  return true;
+}
+
+export function queueMetaLeadUntilConsent(registrationCode: string, eventId?: string) {
   if (typeof window === "undefined" || !registrationCode || !advertisingConsentUndecided()) return;
-  window.sessionStorage.setItem(PENDING_META_LEAD_KEY, registrationCode);
+  window.sessionStorage.setItem(PENDING_META_LEAD_KEY, JSON.stringify({ registrationCode, eventId: eventId || null }));
 }
 
 export function flushPendingMetaLead() {
   if (typeof window === "undefined" || !advertisingConsentGranted()) return;
-  const registrationCode = window.sessionStorage.getItem(PENDING_META_LEAD_KEY);
-  if (!registrationCode) return;
-  if (trackNewMetaLead(registrationCode)) window.sessionStorage.removeItem(PENDING_META_LEAD_KEY);
+  const pending = window.sessionStorage.getItem(PENDING_META_LEAD_KEY);
+  if (!pending) return;
+  let registrationCode = pending;
+  let eventId: string | undefined;
+  try {
+    const parsed = JSON.parse(pending) as { registrationCode?: string; eventId?: string | null };
+    registrationCode = parsed.registrationCode || pending;
+    eventId = parsed.eventId || undefined;
+  } catch {
+    // Compatibility with the previous plain-code session value.
+  }
+  if (trackNewMetaLead(registrationCode, eventId) || window.localStorage.getItem(`vetta-meta-lead:${registrationCode}`) === "sent") window.sessionStorage.removeItem(PENDING_META_LEAD_KEY);
 }
 
 export function trackClarityEvent(name: ClarityEvent) {

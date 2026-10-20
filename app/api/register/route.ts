@@ -7,6 +7,7 @@ import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
 import { createConfirmationToken } from "@/lib/confirmation";
 import { cookies } from "next/headers";
 import { hasValidQaSession, qaSessionCookieName } from "@/lib/qa-session";
+import { sendMetaLeadServerEvent } from "@/lib/meta-capi";
 
 export async function POST(request: Request) {
   try {
@@ -34,6 +35,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, code: "persistence_error", message: "No pudimos guardar tu registro. Inténtalo de nuevo." }, { status: 503 });
     }
     if (!lead) return NextResponse.json({ ok: false, code: "persistence_not_configured", message: "El registro está pendiente de configuración operativa." }, { status: 503 });
+    const metaEventId = !config.demoMode && !qa && "id" in lead ? lead.id : undefined;
+    if (metaEventId && parsed.data.advertisingConsent === "granted") {
+      await sendMetaLeadServerEvent({ eventId: metaEventId, eventTime: new Date(), sourceUrl: new URL("/registro", request.url).toString(), fbp: parsed.data.fbp, fbc: parsed.data.fbc });
+    }
     const response = NextResponse.json({
       ok: true,
       existing: false,
@@ -41,6 +46,7 @@ export async function POST(request: Request) {
       registrationCode: lead.registrationCode,
       whatsappHref: buildWhatsAppHref(config.whatsappNumber, lead.name, lead.registrationCode),
       mode: config.demoMode ? "TEST" : "LIVE",
+      ...(metaEventId ? { metaEventId } : {}),
     });
     if (!config.demoMode) response.cookies.set("vetta_registration_confirmation", createConfirmationToken(lead.registrationCode, config.cohort.id), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/confirmacion", maxAge: 1800 });
     return response;
