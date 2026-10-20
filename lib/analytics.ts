@@ -1,13 +1,15 @@
 export const ANALYTICS_CONSENT_KEY = "vetta-analytics-consent-v1";
 export const ADVERTISING_CONSENT_KEY = "vetta-advertising-consent-v1";
 export const PENDING_META_LEAD_KEY = "vetta-pending-meta-lead-v1";
+export const META_PIXEL_ID = "3337529346452736";
 
-type MetaFunction = ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue?: unknown[]; loaded?: boolean; version?: string; push?: (...args: unknown[]) => void };
+type MetaFunction = ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue?: unknown[]; loaded?: boolean; version?: string; push?: (...args: unknown[]) => void; getState?: () => unknown };
 type ClarityFunction = ((...args: unknown[]) => void) & { q?: unknown[] };
 
 declare global {
   interface Window {
     fbq?: MetaFunction;
+    __vettaMetaPixelInitialized?: boolean;
     clarity?: ClarityFunction;
   }
 }
@@ -52,7 +54,17 @@ export function setAnalyticsConsent(value: "granted" | "denied") {
 
 export function applyVendorConsent() {
   if (typeof window === "undefined") return;
-  if (window.fbq) window.fbq("consent", advertisingConsentGranted() ? "grant" : "revoke");
+  if (window.fbq) {
+    if (advertisingConsentGranted()) {
+      if (!window.__vettaMetaPixelInitialized) {
+        window.fbq("init", META_PIXEL_ID);
+        window.__vettaMetaPixelInitialized = true;
+      }
+      window.fbq("consent", "grant");
+    } else {
+      window.fbq("consent", "revoke");
+    }
+  }
   if (window.clarity) window.clarity("consentv2", { ad_Storage: advertisingConsentGranted() ? "granted" : "denied", analytics_Storage: analyticsConsentGranted() ? "granted" : "denied" });
 }
 

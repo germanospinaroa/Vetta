@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeWhatsApp, registrationSchema } from "../lib/validation";
 import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
-import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, isConfirmedNewRegistration, shouldTrackPageView, trackMetaWhatsAppClick, trackNewMetaLead } from "../lib/analytics";
+import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, applyVendorConsent, isConfirmedNewRegistration, shouldTrackPageView, trackMetaWhatsAppClick, trackNewMetaLead } from "../lib/analytics";
 import { isDuplicateRegistrationConstraint } from "../lib/registration-dedupe";
 import { buildOperationalMatrixText, buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, extractEvolutionParticipants, extractRegistrationCode, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
 import { defaultAnswers, diagnoseExploration, diagnoseOpportunity } from "../lib/matrix-diagnostic";
@@ -67,6 +67,20 @@ describe("VETTA registration contract", () => {
     expect(advertisingConsentGranted()).toBe(false);
     expect(trackNewMetaLead("VETTA-MOCK-2")).toBe(false);
     expect(calls).toHaveLength(0);
+    Object.defineProperty(globalThis, "window", { configurable: true, value: previousWindow });
+  });
+  it("initializes Meta only after advertising consent and only once", () => {
+    const previousWindow = globalThis.window;
+    const calls: unknown[][] = [];
+    Object.defineProperty(globalThis, "window", { configurable: true, value: { localStorage: mockStorage({ [ADVERTISING_CONSENT_KEY]: "denied" }), fbq: (...args: unknown[]) => calls.push(args) } });
+    applyVendorConsent();
+    expect(calls.some((call) => call[0] === "init")).toBe(false);
+    window.localStorage.setItem(ADVERTISING_CONSENT_KEY, "granted");
+    applyVendorConsent();
+    applyVendorConsent();
+    expect(calls.filter((call) => call[0] === "init")).toHaveLength(1);
+    expect(calls.filter((call) => call[0] === "consent" && call[1] === "grant")).toHaveLength(2);
+    expect(window.__vettaMetaPixelInitialized).toBe(true);
     Object.defineProperty(globalThis, "window", { configurable: true, value: previousWindow });
   });
   it("normalizes an international WhatsApp number to E.164", () => {
