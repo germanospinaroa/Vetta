@@ -14,7 +14,7 @@ export type OperationalConversation = { id: string; lead_id: string; instance_na
 type ConversationResolution = { conversation: OperationalConversation | null; lead: OperationalLead | null; reason: "linked" | "code_linked" | "code_not_found" | "code_already_linked" | "rate_limited" | "conversation_not_found" };
 export type GroupMembershipStatus = "CONFIRMADO" | "NO ENCONTRADO" | "NO VERIFICABLE";
 
-function matrixLink() { return process.env.VETTA_MATRIX_URL || `${getPublicConfig().siteUrl}/matriz`; }
+function matrixLink() { return process.env.VETTA_MATRIX_URL || `${getPublicConfig().siteUrl}/tu-proximo-movimiento`; }
 
 async function getConfiguredGroupLink(client: AdminClient) {
   const { data, error } = await client.from("cohorts").select("group_url").eq("id", COHORT_ID).maybeSingle();

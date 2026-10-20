@@ -27,7 +27,7 @@ export function buildOperationalWelcomeText(name: string, groupLink: string) {
 }
 
 export function buildOperationalMatrixText(matrixUrl: string) {
-  return `🎁 *¡Y ahora sí, un regalo para ti!*\n\nAntes de elegir una oportunidad, hay preguntas que vale la pena hacerse.\n\nPor eso preparamos *EL FILTRO ANTES DEL SÍ*, una herramienta interactiva que analiza tus respuestas y te ayuda a descubrir qué tienes a favor, qué necesitas revisar y cuáles podrían ser tus siguientes pasos.\n\n✨ No importa si ya tienes una oportunidad en mente o si apenas estás explorando.\n\n👇 *Descubre tu diagnóstico:*\n${matrixUrl}`;
+  return `🎁 *¡Y ahora sí, un regalo para ti!*\n\nExplora seis maneras de construir una actividad empresarial, comprende qué hay detrás y compara tus próximos movimientos.\n\nPor eso preparamos *TU PRÓXIMO MOVIMIENTO*, una experiencia para descubrir tu siguiente posibilidad.\n\n✨ Puedes entrar aunque todavía estés explorando.\n\n👇 *Descubre la experiencia:*\n${matrixUrl}`;
 }
 
 export function validateWhatsAppGroupUrl(value: unknown) {
