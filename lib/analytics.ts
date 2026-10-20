@@ -52,6 +52,12 @@ export function setAnalyticsConsent(value: "granted" | "denied") {
   window.dispatchEvent(new CustomEvent("vetta:analytics-consent", { detail: value }));
 }
 
+export function setAdvertisingConsent(value: "granted" | "denied") {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(ADVERTISING_CONSENT_KEY, value);
+  window.dispatchEvent(new CustomEvent("vetta:analytics-consent", { detail: value }));
+}
+
 export function applyVendorConsent() {
   if (typeof window === "undefined") return;
   if (window.fbq) {
