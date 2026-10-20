@@ -4,7 +4,7 @@ import { buildGenericWhatsAppHref, buildWhatsAppHref } from "../lib/whatsapp";
 import { territoryFromCampaign } from "../lib/tracking";
 import { ADVERTISING_CONSENT_KEY, CLARITY_EVENTS, advertisingConsentGranted, isConfirmedNewRegistration, shouldTrackPageView, trackNewMetaLead } from "../lib/analytics";
 import { isDuplicateRegistrationConstraint } from "../lib/registration-dedupe";
-import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
+import { extractEvolutionGroupData, extractEvolutionMessage, extractEvolutionParticipant, extractRegistrationCode, matchesConfiguredEvolutionGroup, normalizeWhatsAppSender, validateWhatsAppGroupUrl } from "../lib/whatsapp-evolution-parser";
 import { defaultAnswers, diagnoseExploration, diagnoseOpportunity } from "../lib/matrix-diagnostic";
 
 describe("VETTA registration contract", () => {
@@ -110,6 +110,24 @@ describe("VETTA registration contract", () => {
     });
     expect(lidMessage.senderE164).toBe("+573001234567");
     expect(lidMessage.text).toBe("Hola");
+  });
+
+  it("keeps an unresolved LID with a registration code recoverable without resolving it by code alone", () => {
+    const message = extractEvolutionMessage({
+      event: "messages.upsert",
+      data: { key: { id: "andres-provider-1", remoteJid: "123456789@lid", fromMe: false }, message: { conversation: "Hola, soy Andrés. Mi código es VETTA-96378DDC." } },
+    });
+    expect(message.senderE164).toBeNull();
+    expect(message.senderJid).toBe("123456789@lid");
+    expect(message.registrationCode).toBe("VETTA-96378DDC");
+    expect(extractRegistrationCode("texto sin código")).toBeNull();
+  });
+
+  it("resolves phone identifiers from Evolution alternative fields", () => {
+    const senderPn = extractEvolutionMessage({ event: "messages.upsert", data: { key: { id: "pn-1", remoteJid: "123456789@lid", senderPn: "573001234567@s.whatsapp.net", fromMe: false }, message: { conversation: "LISTO" } } });
+    const snakeCase = extractEvolutionMessage({ event: "messages.upsert", data: { key: { id: "pn-2", remoteJid: "123456789@lid", sender_pn: "573001234568@s.whatsapp.net", fromMe: false }, message: { conversation: "LISTO" } } });
+    expect(senderPn.senderE164).toBe("+573001234567");
+    expect(snakeCase.senderE164).toBe("+573001234568");
   });
 
   it("accepts only the configured group and preserves unverifiable LIDs", () => {

@@ -15,6 +15,12 @@ export function normalizeWhatsAppSender(value: unknown): string | null {
   return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : null;
 }
 
+export function extractRegistrationCode(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const match = value.match(/\b((?:VETTA|QA)-[A-Z0-9]{8})\b/i);
+  return match?.[1]?.toUpperCase() || null;
+}
+
 export function validateWhatsAppGroupUrl(value: unknown) {
   if (typeof value !== "string" || !value.trim()) return null;
   try {
@@ -71,16 +77,26 @@ export function extractEvolutionMessage(payload: unknown) {
   const message = asRecord(data.message ?? data);
   const nestedMessage = asRecord(message.ephemeralMessage ?? message.viewOnceMessage ?? message.viewOnceMessageV2);
   const messageBody = asRecord(nestedMessage.message ?? message);
-  const remoteJid = key.remoteJid ?? data.remoteJid ?? data.sender;
-  const sender = key.participant ?? data.participant ?? remoteJid;
+  const remoteJid = key.remoteJid ?? data.remoteJid ?? data.remote_jid ?? data.sender;
+  const sender = firstString(key.participant, data.participant, data.senderJid, data.sender_jid, remoteJid);
   const phoneCandidates = [
+    key.remoteJid,
     key.remoteJidAlt,
+    key.remote_jid_alt,
     key.senderPn,
     key.senderPN,
+    key.sender_pn,
+    key.phoneNumber,
+    key.phone_number,
     data.remoteJidAlt,
+    data.remote_jid_alt,
     data.senderPn,
     data.senderPN,
+    data.sender_pn,
     data.phoneNumber,
+    data.phone_number,
+    data.phone,
+    data.from,
     sender,
   ];
   const text = messageBody.conversation
@@ -95,8 +111,13 @@ export function extractEvolutionMessage(payload: unknown) {
     providerMessageId: String(providerId || fallback).slice(0, 240),
     senderJid: typeof sender === "string" ? sender : null,
     senderE164: phoneCandidates.map(normalizeWhatsAppSender).find(Boolean) || null,
+    registrationCode: extractRegistrationCode(text),
     text: typeof text === "string" ? text.trim() : "",
     fromMe: key.fromMe === true || data.fromMe === true,
     remoteJid: typeof remoteJid === "string" ? remoteJid : null,
   };
+}
+
+function firstString(...values: unknown[]) {
+  return values.find((value): value is string => typeof value === "string" && value.trim().length > 0)?.trim() || null;
 }

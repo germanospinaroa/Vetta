@@ -23,6 +23,18 @@ function matrixLink() {
   return process.env.VETTA_MATRIX_URL || `${getPublicConfig().siteUrl}/matriz`;
 }
 
+type EvolutionLead = { id: string; name: string; whatsapp_e164: string; registration_code: string };
+
+async function resolveLeadFromVerifiedJid(client: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, message: ReturnType<typeof extractEvolutionMessage>) {
+  if (message.senderE164 || !message.senderJid || !message.registrationCode) return null;
+  const { data: candidates, error: candidateError } = await client.from("leads").select("id,name,whatsapp_e164,registration_code").eq("cohort_id", COHORT_ID).eq("registration_code", message.registrationCode).limit(2);
+  if (candidateError || !candidates || candidates.length !== 1) return null;
+  const candidate = candidates[0] as EvolutionLead;
+  const { data: identityRows, error: identityError } = await client.from("whatsapp_inbound_messages").select("lead_id").eq("sender_jid", message.senderJid).eq("lead_id", candidate.id).limit(1);
+  if (identityError || !identityRows?.length) return null;
+  return candidate;
+}
+
 async function recordEvent(client: ReturnType<typeof createSupabaseAdminClient>, leadId: string, name: string, properties: Record<string, string | boolean>) {
   await client?.from("lead_events").insert({ lead_id: leadId, cohort_id: COHORT_ID, name, properties });
 }
@@ -33,8 +45,17 @@ async function sendOnce(client: NonNullable<ReturnType<typeof createSupabaseAdmi
   if (existing?.status === "pending" && existing.created_at && Date.now() - Date.parse(existing.created_at) < 5 * 60 * 1000) {
     return { sent: false, duplicate: true, pending: true, providerMessageId: existing.provider_message_id || null };
   }
-  const { data: row, error: insertError } = await client.from("whatsapp_outbound_messages").upsert({ lead_id: lead.id, kind, recipient_e164: lead.whatsapp_e164, status: "pending", error_code: null }, { onConflict: "lead_id,kind" }).select("id,status").single();
-  if (insertError || !row) throw new Error("outbound_state_failed");
+  let row: { id: string; status: string } | null = null;
+  if ((existing?.status === "failed" || existing?.status === "pending") && existing.created_at) {
+    const { data: claimed, error: claimError } = await client.from("whatsapp_outbound_messages").update({ status: "pending", error_code: null }).eq("id", existing.id).eq("status", existing.status).lt("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString()).select("id,status").maybeSingle();
+    if (claimError) throw new Error("outbound_state_failed");
+    if (claimed) row = claimed;
+  } else if (!existing) {
+    const { data: inserted, error: insertError } = await client.from("whatsapp_outbound_messages").upsert({ lead_id: lead.id, kind, recipient_e164: lead.whatsapp_e164, status: "pending", error_code: null }, { onConflict: "lead_id,kind", ignoreDuplicates: true }).select("id,status").maybeSingle();
+    if (insertError) throw new Error("outbound_state_failed");
+    if (inserted) row = inserted;
+  }
+  if (!row) return { sent: false, duplicate: true, pending: true, providerMessageId: existing?.provider_message_id || null };
   try {
     const response = await sendEvolutionText(lead.whatsapp_e164, text);
     const providerId = typeof response.key === "object" && response.key ? String((response.key as Record<string, unknown>).id || "") : undefined;
@@ -106,9 +127,10 @@ export async function processEvolutionMessage(payload: unknown) {
     console.info("evolution_message_ignored", { reason: "from_me", hasProviderId: Boolean(message.providerMessageId) });
     return { action: "ignored" as const, reason: "from_me" as const };
   }
-  if (!message.senderE164 || !message.text) {
-    const invalidAction = "ignored_invalid_message";
-    const invalidError = !message.senderE164 ? "sender_not_resolved" : "text_not_resolved";
+  const verifiedJidLead = await resolveLeadFromVerifiedJid(client, message);
+  if ((!message.senderE164 && !verifiedJidLead) || !message.text) {
+    const pendingSenderResolution = !message.senderE164 && Boolean(message.registrationCode);
+    const invalidError = !message.senderE164 ? (pendingSenderResolution ? "sender_not_resolved_code_present" : "sender_not_resolved") : "text_not_resolved";
     const { error: invalidInsertError } = await client.from("whatsapp_inbound_messages").upsert({
       provider_message_id: message.providerMessageId,
       instance_name: INSTANCE,
@@ -118,7 +140,7 @@ export async function processEvolutionMessage(payload: unknown) {
       event_name: message.eventName,
       message_kind: "text",
       message_hash: message.text ? createHash("sha256").update(message.text).digest("hex") : null,
-      action: invalidAction,
+      action: pendingSenderResolution ? "pending_sender_resolution" : "ignored_invalid_message",
       error_code: invalidError,
       processed_at: new Date().toISOString(),
     }, { onConflict: "provider_message_id" });
@@ -131,15 +153,18 @@ export async function processEvolutionMessage(payload: unknown) {
       hasText: Boolean(message.text),
       reason: invalidError,
     });
-    return { action: "ignored_invalid_message" as const, reason: invalidError };
+    return { action: pendingSenderResolution ? "pending_sender_resolution" as const : "ignored_invalid_message" as const, reason: invalidError };
   }
 
   const { data: existing } = await client.from("whatsapp_inbound_messages").select("id,action").eq("provider_message_id", message.providerMessageId).maybeSingle();
   if (existing) return { action: "duplicate" as const, reason: "provider_message_id" as const };
 
-  const { data: lead, error: leadError } = await client.from("leads").select("id,name,whatsapp_e164,registration_code").eq("cohort_id", COHORT_ID).eq("whatsapp_e164", message.senderE164).maybeSingle();
+  const { data: phoneLead, error: leadError } = message.senderE164
+    ? await client.from("leads").select("id,name,whatsapp_e164,registration_code").eq("cohort_id", COHORT_ID).eq("whatsapp_e164", message.senderE164).maybeSingle()
+    : { data: null, error: null };
+  const lead = (verifiedJidLead || phoneLead) as EvolutionLead | null;
   const listo = /^listo\b/i.test(message.text);
-  const { error: inboundError } = await client.from("whatsapp_inbound_messages").insert({ provider_message_id: message.providerMessageId, instance_name: INSTANCE, sender_jid: message.senderJid, sender_e164: message.senderE164, lead_id: lead?.id || null, event_name: message.eventName, message_kind: "text", message_hash: createHash("sha256").update(message.text).digest("hex"), action: leadError ? "error" : lead ? (listo ? "listo_pending_group_verification" : "identified") : "unmatched", error_code: leadError ? "lead_lookup_failed" : lead ? null : "lead_not_found", processed_at: new Date().toISOString() });
+  const { error: inboundError } = await client.from("whatsapp_inbound_messages").insert({ provider_message_id: message.providerMessageId, instance_name: INSTANCE, sender_jid: message.senderJid, sender_e164: message.senderE164 || lead?.whatsapp_e164 || null, lead_id: lead?.id || null, event_name: message.eventName, message_kind: "text", message_hash: createHash("sha256").update(message.text).digest("hex"), action: leadError ? "error" : lead ? (listo ? "listo_pending_group_verification" : "identified") : "unmatched", error_code: leadError ? "lead_lookup_failed" : lead ? null : "lead_not_found", processed_at: new Date().toISOString() });
   if (inboundError) throw new Error("inbound_persistence_failed");
   if (leadError || !lead) return { action: "unmatched" as const };
 
