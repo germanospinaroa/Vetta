@@ -24,8 +24,10 @@ export function AnalyticsConsent() {
     setVisible(false);
   }
   return <aside className="analytics-consent" aria-label="Preferencias de privacidad">
-    <p>Usamos Meta Pixel y Microsoft Clarity para medir campañas y mejorar la experiencia. Si no aceptas, estas tecnologías permanecen desactivadas. El registro seguirá funcionando.</p>
+    <h2>Tu privacidad importa</h2>
+    <p>Usamos herramientas de medición para mejorar esta página. Tú decides si <strong>aceptas</strong> o rechazas. ¡Y claro que agradecemos que aceptes!</p>
     <div className="analytics-consent-actions">
+      <button type="button" className="analytics-consent-reject" onClick={() => savePreferences(false, false)}>Rechazar</button>
       <button type="button" className="analytics-consent-accept" onClick={() => savePreferences(true, true)}>Aceptar</button>
     </div>
   </aside>;
