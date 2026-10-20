@@ -42,7 +42,7 @@ export default function PrivacyPage() {
           <li>Conservar atribución UTM cuando exista.</li>
           <li>Registrar eventos operativos necesarios para administrar la experiencia.</li>
           <li>Medir conversiones publicitarias mediante Meta Pixel, identificador <strong>3337529346452736</strong>, solo con permiso publicitario.</li>
-          <li>Analizar interacciones mediante Microsoft Clarity, identificador <strong>z0c14ujntu</strong>, solo con permiso analítico.</li>
+          <li>Analizar interacciones mediante Microsoft Clarity, identificador <strong>z0c14ujntu</strong>, en modo limitado sin cookies cuando no existe autorización y con funciones completas solo tras el permiso analítico correspondiente.</li>
           <li>Atender consultas, derechos, revocatorias, solicitudes de eliminación y obligaciones legales.</li>
         </ul>
 
@@ -51,7 +51,7 @@ export default function PrivacyPage() {
         <p>El píxel y Meta pueden recibir automáticamente información técnica como dirección IP, URL, página de referencia, fecha y hora, navegador, dispositivo, sistema operativo, identificadores técnicos y cookies o valores equivalentes que Meta pueda establecer o leer, incluidos identificadores de publicidad cuando estén disponibles. El sitio no envía nombres, teléfonos, códigos de registro ni respuestas de la matriz como propiedades del evento.</p>
 
         <h2>Microsoft Clarity y datos técnicos</h2>
-        <p>Microsoft Clarity se carga únicamente cuando la persona acepta la preferencia separada de analítica. Puede recibir información técnica y de interacción como URL, navegación, tamaño de pantalla, dispositivo, navegador, rendimiento, eventos de interacción e identificadores de sesión. Clarity puede utilizar cookies o identificadores técnicos conforme a su configuración y documentación vigente.</p>
+        <p>Microsoft Clarity se inicializa durante la carga pública en modo de consentimiento denegado. En ese modo puede realizar medición limitada por página sin establecer cookies de Clarity; las funciones que requieren persistencia, cookies o continuidad entre sesiones solo se habilitan después de aceptar la preferencia separada de analítica. Puede recibir información técnica y de interacción como URL, navegación, tamaño de pantalla, dispositivo, navegador, rendimiento, eventos de interacción e identificadores de sesión conforme a su configuración y documentación vigente.</p>
         <p>Los formularios, la confirmación, la matriz y las superficies administrativas están marcados para enmascaramiento. No se envían respuestas de la matriz ni valores de campos como propiedades de eventos personalizados.</p>
 
         <h2>WhatsApp, Evolution API e infraestructura</h2>
