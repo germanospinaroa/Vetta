@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useRef, useState, useSyncExternalStore } from "re
 import { useRouter } from "next/navigation";
 import { getCountries, getCountryCallingCode } from "libphonenumber-js";
 import { readAttribution, readMetaAttribution } from "@/lib/tracking";
-import { advertisingConsentGranted, isConfirmedNewRegistration, queueMetaLeadUntilConsent, setAdvertisingConsent, trackClarityEvent, trackMetaWhatsAppClick, trackNewMetaLead } from "@/lib/analytics";
+import { advertisingConsentGranted, isConfirmedNewRegistration, queueMetaLeadUntilConsent, trackClarityEvent, trackMetaWhatsAppClick, trackNewMetaLead } from "@/lib/analytics";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
@@ -45,8 +45,6 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     setErrors({});
     const form = new FormData(event.currentTarget);
     const payload = Object.fromEntries(form.entries());
-    const advertisingChoice = form.get("consent_marketing") === "on";
-    if (advertisingChoice) setAdvertisingConsent("granted");
     const queryAttribution = readAttribution(window.location.search);
     let storedAttribution: Record<string, string> = {};
     try {
@@ -59,7 +57,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid"]) payload[key] = queryAttribution[key as keyof typeof queryAttribution] || storedAttribution[key] || "";
     payload.fbp = metaAttribution.fbp || storedAttribution.fbp || "";
     payload.fbc = metaAttribution.fbc || storedAttribution.fbc || "";
-    payload.advertisingConsent = advertisingChoice || advertisingConsentGranted() ? "granted" : "denied";
+    payload.advertisingConsent = advertisingConsentGranted() ? "granted" : "denied";
     payload.consentVersion = "v1";
 
     try {
@@ -124,7 +122,6 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         <div className="field"><label htmlFor="whatsapp">WhatsApp</label><div className="phone-input"><span aria-hidden="true">+{getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}</span><input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="tel-national" required placeholder="300 000 0000" aria-label={`Número de WhatsApp sin prefijo para +${getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}`} /></div></div>
         <div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" required placeholder="Tu ciudad" /></div>
         <label className="consent"><input type="checkbox" name="consent" required /><span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso de privacidad</a>.</span></label>
-        <label className="consent"><input type="checkbox" name="consent_marketing" /><span>Autorizo por separado la medición publicitaria de Meta Pixel para ayudarnos a medir esta campaña. Esta elección es opcional y puedo retirarla desde Preferencias de privacidad.</span></label>
         {state === "error" && <p className="form-error" role="alert">{result && !result.ok ? result.message : "Revisa los campos y vuelve a intentarlo."}</p>}
         <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Guardando tu inscripción…" : "CONFIRMAR MI INSCRIPCIÓN"}<span aria-hidden="true">↗</span></button>
         <p className="form-footnote">Recibirás el regalo después de ingresar al grupo privado.</p>

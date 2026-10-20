@@ -10,6 +10,7 @@ export function AnalyticsConsent() {
 
   useEffect(() => {
     const open = () => { setAnalytics(analyticsConsentGranted()); setAdvertising(advertisingConsentGranted()); setVisible(true); };
+    if (!analyticsConsentGranted() && !advertisingConsentGranted()) open();
     window.addEventListener("vetta:open-privacy-preferences", open);
     return () => window.removeEventListener("vetta:open-privacy-preferences", open);
   }, []);
@@ -23,12 +24,9 @@ export function AnalyticsConsent() {
     setVisible(false);
   }
   return <aside className="analytics-consent" aria-label="Preferencias de privacidad">
-    <h2>Preferencias de privacidad</h2><p>Elige por separado las tecnologías opcionales. No enviamos las respuestas de la matriz.</p>
-    <label><input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} /> Analítica de uso (Clarity)</label>
-    <label><input type="checkbox" checked={advertising} onChange={(event) => setAdvertising(event.target.checked)} /> Medición publicitaria y conversiones (Meta)</label>
+    <p>Usamos Meta Pixel y Microsoft Clarity para medir campañas y mejorar la experiencia. Si no aceptas, estas tecnologías permanecen desactivadas. El registro seguirá funcionando.</p>
     <div className="analytics-consent-actions">
-      <button type="button" className="analytics-consent-reject" onClick={() => savePreferences()}>Guardar preferencias</button>
-      <button type="button" className="analytics-consent-accept" onClick={() => savePreferences(true, true)}>Aceptar ambas</button>
+      <button type="button" className="analytics-consent-accept" onClick={() => savePreferences(true, true)}>Aceptar</button>
     </div>
   </aside>;
 }
