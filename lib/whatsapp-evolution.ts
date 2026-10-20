@@ -150,6 +150,22 @@ export async function recoverWelcomeForRegistration(registrationCode: string) {
   };
 }
 
+export async function recoverMatrixForRegistration(registrationCode: string) {
+  const client = createSupabaseAdminClient();
+  if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
+  const { data: lead, error: leadError } = await client.from("leads").select("id,name,whatsapp_e164").eq("cohort_id", COHORT_ID).eq("registration_code", registrationCode).maybeSingle();
+  if (leadError) throw new Error("registration_lookup_failed");
+  if (!lead) throw new Error("registration_not_found");
+  const { data: consent, error: consentError } = await client.from("consent_records").select("id").eq("lead_id", lead.id).eq("consent_type", "experience_communications").limit(1);
+  if (consentError) throw new Error("communication_consent_lookup_failed");
+  if (!consent?.length) throw new Error("operational_communication_not_authorized");
+  const { data: welcome, error: welcomeError } = await client.from("whatsapp_outbound_messages").select("status").eq("lead_id", lead.id).eq("kind", "welcome").maybeSingle();
+  if (welcomeError) throw new Error("welcome_state_lookup_failed");
+  if (welcome?.status !== "sent") throw new Error("welcome_not_accepted");
+  const matrix = await deliverMatrixForLead(client, lead, lead.whatsapp_e164);
+  return { registrationCode, matrix: { sent: matrix.sent, duplicate: matrix.duplicate, pending: Boolean(matrix.pending), providerMessageId: matrix.providerMessageId } };
+}
+
 export async function recoverPendingMatrixDeliveries() {
   const client = createSupabaseAdminClient();
   if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
