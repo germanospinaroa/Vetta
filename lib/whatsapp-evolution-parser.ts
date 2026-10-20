@@ -21,6 +21,11 @@ export function extractRegistrationCode(value: unknown): string | null {
   return match?.[1]?.toUpperCase() || null;
 }
 
+export function buildOperationalWelcomeText(name: string, groupLink: string, matrixUrl: string) {
+  const firstName = name.trim().split(/\s+/)[0] || name;
+  return `¡Hola, ${firstName}! 👋 Bienvenido a *NO EMPRENDAS TODAVÍA*.\n\nTu inscripción está confirmada. 🎉\n\n👥 *Únete a nuestro grupo privado*, donde compartiremos los accesos a los encuentros:\n${groupLink}\n\n🎁 *Tu regalo: EL FILTRO ANTES DEL SÍ*\nDescubre qué deberías revisar antes de elegir una oportunidad:\n${matrixUrl}\n\n📅 Nos vemos el 20 y 22 de octubre, a las 8:00 p. m. (Colombia).\n\n¡Nos vemos pronto!`;
+}
+
 export function validateWhatsAppGroupUrl(value: unknown) {
   if (typeof value !== "string" || !value.trim()) return null;
   try {

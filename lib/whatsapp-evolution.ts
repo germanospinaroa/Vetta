@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { getPublicConfig } from "@/lib/config";
 import { sendEvolutionText } from "@/lib/evolution";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { extractEvolutionGroupData, extractEvolutionMessage, matchesConfiguredEvolutionGroup, validateWhatsAppGroupUrl } from "@/lib/whatsapp-evolution-parser";
+import { buildOperationalWelcomeText, extractEvolutionGroupData, extractEvolutionMessage, matchesConfiguredEvolutionGroup, validateWhatsAppGroupUrl } from "@/lib/whatsapp-evolution-parser";
 
 const COHORT_ID = process.env.NEXT_PUBLIC_ACTIVE_COHORT_ID;
 const INSTANCE = process.env.EVOLUTION_INSTANCE || "momentum";
@@ -23,9 +23,6 @@ function matrixLink() {
   return process.env.VETTA_MATRIX_URL || `${getPublicConfig().siteUrl}/matriz`;
 }
 
-function welcomeText(name: string, groupLink: string) {
-  return `¡${firstName(name)}, bienvenido a NO EMPRENDAS TODAVÍA! 🙌\n\nTu registro está confirmado.\n\nEste es el enlace para ingresar a nuestro grupo privado Antes de Emprender:\n\n${groupLink}\n\nTambién tienes acceso directo a tu regalo: EL FILTRO ANTES DEL SÍ 🎁\n\n${matrixLink()}\n\nEste mensaje contiene los accesos operativos de tu registro.`;
-}
 
 type EvolutionLead = { id: string; name: string; whatsapp_e164: string; registration_code: string };
 type ConversationResolution = { lead: EvolutionLead | null; reason: "linked" | "code_linked" | "code_not_found" | "code_already_linked" | "rate_limited" | "conversation_not_found" };
@@ -107,10 +104,9 @@ export async function deliverWelcomeForLead(lead: { id: string; name: string; wh
   const client = createSupabaseAdminClient();
   if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
   const groupLink = await getConfiguredGroupLink(client);
-  const welcome = await sendOnce(client, lead, lead.whatsapp_e164, "welcome", welcomeText(lead.name, groupLink));
-  if (!welcome.sent && !welcome.duplicate) return { welcome, matrix: null };
-  const matrix = await deliverMatrixForLead(client, lead, lead.whatsapp_e164);
-  return { welcome, matrix };
+  const welcome = await sendOnce(client, lead, lead.whatsapp_e164, "welcome", buildOperationalWelcomeText(lead.name, groupLink, matrixLink()));
+  if (welcome.sent) await recordEvent(client, lead.id, "gift_included_in_welcome", { source: "evolution", automated: true });
+  return { welcome, matrix: null };
 }
 
 export async function recoverPendingWelcomeDeliveries() {
@@ -146,7 +142,7 @@ export async function recoverWelcomeForRegistration(registrationCode: string) {
   return {
     registrationCode,
     welcome: { sent: result.welcome.sent, duplicate: result.welcome.duplicate, pending: Boolean(result.welcome.pending), providerMessageId: result.welcome.providerMessageId },
-    matrix: result.matrix ? { sent: result.matrix.sent, duplicate: result.matrix.duplicate, pending: Boolean(result.matrix.pending), providerMessageId: result.matrix.providerMessageId } : null,
+    matrix: null,
   };
 }
 
@@ -162,14 +158,13 @@ export async function recoverMatrixForRegistration(registrationCode: string) {
   const { data: welcome, error: welcomeError } = await client.from("whatsapp_outbound_messages").select("status").eq("lead_id", lead.id).eq("kind", "welcome").maybeSingle();
   if (welcomeError) throw new Error("welcome_state_lookup_failed");
   if (welcome?.status !== "sent") throw new Error("welcome_not_accepted");
-  const matrix = await deliverMatrixForLead(client, lead, lead.whatsapp_e164);
-  return { registrationCode, matrix: { sent: matrix.sent, duplicate: matrix.duplicate, pending: Boolean(matrix.pending), providerMessageId: matrix.providerMessageId } };
+  return { registrationCode, matrix: { sent: false, duplicate: true, pending: false, providerMessageId: null }, reason: "matrix_included_in_welcome" as const };
 }
 
 export async function recoverPendingMatrixDeliveries() {
   const client = createSupabaseAdminClient();
   if (!client || !COHORT_ID) throw new Error("supabase_not_configured");
-  const { data: pending, error } = await client.from("whatsapp_inbound_messages").select("lead_id,sender_jid").in("action", ["listo_pending_group_verification", "matrix_delivery_failed"]).not("lead_id", "is", null).limit(20);
+  const { data: pending, error } = await client.from("whatsapp_inbound_messages").select("lead_id,sender_jid").eq("action", "matrix_delivery_failed").not("lead_id", "is", null).limit(20);
   if (error) throw new Error("pending_matrix_lookup_failed");
   let delivered = 0;
   let failed = 0;
@@ -254,22 +249,9 @@ export async function processEvolutionMessage(payload: unknown) {
   if (inboundError) throw new Error("inbound_persistence_failed");
 
   const groupLink = await getConfiguredGroupLink(client);
-  const welcome = await sendOnce(client, lead, message.senderJid, "welcome", welcomeText(lead.name, groupLink));
+  const welcome = await sendOnce(client, lead, message.senderJid, "welcome", buildOperationalWelcomeText(lead.name, groupLink, matrixLink()));
   await recordEvent(client, lead.id, "conversation_confirmed", { source: "evolution", automated: true });
   await recordEvent(client, lead.id, "whatsapp_clicked", { source: "evolution", automated: true });
-  if (listo) {
-    await recordEvent(client, lead.id, "group_join_declared", { source: "whatsapp", automated: false });
-    try {
-      const matrix = await deliverMatrixForLead(client, lead, message.senderJid);
-      if (matrix.sent || matrix.duplicate) return { action: matrix.sent ? "matrix_sent" as const : "matrix_delivery_pending" as const, welcomeDuplicate: welcome.duplicate };
-    } catch {
-      await client.from("whatsapp_inbound_messages").update({ action: "matrix_delivery_failed", error_code: "matrix_delivery_failed" }).eq("provider_message_id", message.providerMessageId);
-      return { action: "matrix_delivery_failed" as const, welcomeDuplicate: welcome.duplicate };
-    }
-    return { action: "listo_pending_group_verification" as const, welcomeDuplicate: welcome.duplicate };
-  }
-  if (welcome.sent || welcome.duplicate) {
-    try { await deliverMatrixForLead(client, lead, message.senderJid); } catch { return { action: "matrix_delivery_failed" as const, welcomeDuplicate: welcome.duplicate }; }
-  }
-  return { action: "welcomed" as const, welcomeDuplicate: welcome.duplicate };
+  if (listo) await recordEvent(client, lead.id, "group_join_declared", { source: "whatsapp", automated: false });
+  return { action: welcome.sent ? "welcomed" as const : "access_already_delivered" as const, welcomeDuplicate: welcome.duplicate };
 }
