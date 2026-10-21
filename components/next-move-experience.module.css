@@ -5,5 +5,5 @@
 .heroIntro > div,.universeHeading > div,.decisionTop > div,.missionHeading > div{min-width:0}
 .heroIntro > div{width:100%}
 .heroIntro h1{width:100%;max-width:860px;overflow-wrap:anywhere}
-.heroIntro p{max-width:100%;overflow-wrap:anywhere}
-@media (max-width:639px){.heroIntro h1{font-size:clamp(2.4rem,12vw,7rem)}.heroIntro h1 i{display:block}}
+.heroIntro p{max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+@media (max-width:639px){.heroIntro h1{font-size:clamp(2.4rem,10vw,7rem);word-break:break-word}.heroIntro h1 i{display:block}}
