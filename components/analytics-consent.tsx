@@ -10,7 +10,6 @@ export function AnalyticsConsent() {
 
   useEffect(() => {
     const open = () => { setAnalytics(analyticsConsentGranted()); setAdvertising(advertisingConsentGranted()); setVisible(true); };
-    if (!analyticsConsentGranted() && !advertisingConsentGranted()) open();
     window.addEventListener("vetta:open-privacy-preferences", open);
     return () => window.removeEventListener("vetta:open-privacy-preferences", open);
   }, []);
