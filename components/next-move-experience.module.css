@@ -6,4 +6,4 @@
 .heroIntro > div{width:100%}
 .heroIntro h1{width:100%;max-width:860px;overflow-wrap:anywhere}
 .heroIntro p{width:100%;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
-@media (max-width:639px){.heroIntro h1{font-size:clamp(2.4rem,10vw,7rem);word-break:break-word}.heroIntro h1 i,.universeHeading h2 i{display:block}.universeHeading h2{width:100%;word-break:break-word}}
+@media (max-width:639px){.heroIntro,.universeHeading{width:calc(100vw - 44px);max-width:calc(100vw - 44px)}.heroIntro h1{font-size:clamp(2.4rem,10vw,7rem);word-break:break-word}.heroIntro h1 i,.universeHeading h2 i{display:block}.universeHeading h2{width:100%;word-break:break-word}}
