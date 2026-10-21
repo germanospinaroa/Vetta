@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BUSINESS_MODELS, INTENT_OPTIONS, MODEL_BY_ID, type BusinessModel } from "@/lib/next-move-models";
+import { PrivacyPreferencesButton } from "@/components/privacy-preferences-button";
 import styles from "./next-move-experience.module.css";
 
 const STORAGE_KEY = "vetta-next-move-selection-v1";
@@ -103,5 +104,5 @@ export function NextMoveExperience() {
   const state = useExperienceState();
   const activeView = state.view === "model" ? <ModelDetail state={state} /> : state.view === "week" ? <FirstWeek state={state} /> : state.view === "compare" ? <Compare state={state} /> : state.view === "dossier" ? <Dossier state={state} /> : <Universe state={state} />;
   if (!state.ready) return <main className={styles.shell}><div className={styles.loading}>Preparando tu espacio de exploración…</div></main>;
-  return <main className={styles.shell}><a className="skip-link" href="#next-move-content">Saltar al contenido</a><header className={styles.header}><Link href="/" className={styles.logo}><span>✦</span> NO EMPRENDAS TODAVÍA.</Link><span className={styles.headerMeta}>TU PRÓXIMO MOVIMIENTO</span><button className={styles.headerReset} onClick={() => { state.setSelection([]); state.setIntent(""); state.setCustomIntent(""); state.setView("universe"); }}>Reiniciar</button></header><div id="next-move-content">{activeView}</div><footer className={styles.footer}><span>Una experiencia para descubrir tu siguiente posibilidad.</span><Link href="/privacidad">Privacidad</Link></footer></main>;
+  return <main className={styles.shell}><a className="skip-link" href="#next-move-content">Saltar al contenido</a><header className={styles.header}><Link href="/" className={styles.logo}><span>✦</span> NO EMPRENDAS TODAVÍA.</Link><span className={styles.headerMeta}>TU PRÓXIMO MOVIMIENTO</span><button className={styles.headerReset} onClick={() => { state.setSelection([]); state.setIntent(""); state.setCustomIntent(""); state.setView("universe"); }}>Reiniciar</button></header><div id="next-move-content">{activeView}</div><footer className={styles.footer}><span>Una experiencia para descubrir tu siguiente posibilidad.</span><Link href="/privacidad">Privacidad</Link><PrivacyPreferencesButton /></footer></main>;
 }
