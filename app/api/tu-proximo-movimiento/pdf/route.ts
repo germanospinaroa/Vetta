@@ -1,28 +1,74 @@
 import { NextResponse } from "next/server";
-import { MODEL_BY_ID } from "@/lib/next-move-models";
+import { MODEL_BY_ID, type DecisionOption } from "@/lib/next-move-models";
 
 export const runtime = "nodejs";
 
-const WIN_ANSI: Record<string, number> = { "á": 0xe1, "é": 0xe9, "í": 0xed, "ó": 0xf3, "ú": 0xfa, "ñ": 0xf1, "Á": 0xc1, "É": 0xc9, "Í": 0xcd, "Ó": 0xd3, "Ú": 0xda, "Ñ": 0xd1, "¿": 0xbf, "¡": 0xa1, "·": 0xb7, "—": 0x97, "“": 0x93, "”": 0x94, "’": 0x92 };
-function escapePdf(value: string) { return Array.from(value).map((char) => { if (char === "\\") return "\\\\"; if (char === "(") return "\\("; if (char === ")") return "\\)"; const code = WIN_ANSI[char]; return code ? `\\${code.toString(8).padStart(3, "0")}` : /[\x20-\x7E\n]/.test(char) ? char : "?"; }).join(""); }
-function wrap(value: string, width = 84) { const words = value.replace(/\s+/g, " ").trim().split(" "); const lines: string[] = []; let line = ""; for (const word of words) { if ((line + " " + word).trim().length > width && line) { lines.push(line); line = word; } else line = (line + " " + word).trim(); } if (line) lines.push(line); return lines; }
-function makePage(lines: string[], pageNumber: number) { const commands = ["BT", "/F1 20 Tf", "48 754 Td", "(TU PROXIMO MOVIMIENTO) Tj", "/F1 10 Tf", "0 -22 Td", `(Mapa de posibilidades · OCTUBRE 2026 · Pagina ${pageNumber}) Tj`, "/F1 10 Tf", "0 -34 Td"]; for (const line of lines) { commands.push(`(${escapePdf(line)}) Tj`, "0 -14 Td"); } commands.push("ET"); return commands.join("\n"); }
+const ANSI: Record<string, number> = { "á": 0xe1, "é": 0xe9, "í": 0xed, "ó": 0xf3, "ú": 0xfa, "ñ": 0xf1, "Á": 0xc1, "É": 0xc9, "Í": 0xcd, "Ó": 0xd3, "Ú": 0xda, "Ñ": 0xd1, "¿": 0xbf, "¡": 0xa1, "·": 0xb7, "—": 0x97, "“": 0x93, "”": 0x94, "’": 0x92, "«": 0xab, "»": 0xbb };
+function escapePdf(value: string) { return Array.from(value).map((char) => { if (char === "\\") return "\\\\"; if (char === "(") return "\\("; if (char === ")") return "\\)"; const code = ANSI[char]; return code ? `\\${code.toString(8).padStart(3, "0")}` : /[\x20-\x7E\n]/.test(char) ? char : "?"; }).join(""); }
+function wrap(value: string, width = 77) { const words = value.replace(/\s+/g, " ").trim().split(" "); const lines: string[] = []; let line = ""; for (const word of words) { if ((line + " " + word).trim().length > width && line) { lines.push(line); line = word; } else line = (line + " " + word).trim(); } if (line) lines.push(line); return lines; }
 
-function buildPdf(selection: string[], intent: string) {
-  const models = selection.map((id) => MODEL_BY_ID[id]).filter(Boolean);
-  const pages: string[][] = [];
-  const addPage = (heading: string, body: string[]) => { const lines = [heading.toUpperCase(), "", ...body.flatMap((item) => wrap(item)), ""]; for (let i = 0; i < lines.length; i += 43) pages.push(lines.slice(i, i + 43)); };
-  addPage("Tu mapa de posibilidades", ["Exploraste diferentes maneras de construir una actividad empresarial.", `Mi intención: ${intent}` , `Rutas exploradas: ${models.map((model) => model.name).join(", ")}.`]);
-  addPage("Tu punto de partida", ["Este expediente organiza lo que viste, lo que tendrías que construir y las preguntas que conviene resolver antes de comprometer recursos.", "No es un ranking ni una predicción de éxito. Es una base para seguir investigando con información real."]);
-  for (const model of models) addPage(model.name, [model.whatYouBuild, `Qué ofreces: ${model.whatYouOffer}`, `Cómo funciona el ingreso: ${model.howRevenueWorks}`, `Puedes aprovechar: ${model.existingInfrastructure.join("; ")}`, `Te corresponde construir: ${model.personalResponsibilities.join("; ")}`, `Capacidades: ${model.skillsToDevelop.join("; ")}`, `Comprueba: ${model.conditionsToVerify.join("; ")}`, "Primera semana:", ...model.firstWeek.map((move, index) => `${index + 1}. ${move.title}: ${move.description} Aprendizaje: ${move.expectedLearning}`), `Pregunta decisiva: ${model.decisiveQuestion}`]);
-  addPage("Comparación", models.map((model) => `${model.name}: ofrece ${model.comparison.offer}; construye ${model.comparison.builds}; aprovecha ${model.comparison.leverages}; aprende ${model.comparison.learns}; opera ${model.comparison.operations}; verifica ${model.comparison.risksToVerify}.`));
-  addPage("Tus próximos movimientos", models.flatMap((model) => [model.name, ...model.firstWeek.map((move, index) => `${index + 1}. ${move.title}: ${move.expectedLearning}`)]));
-  addPage("Antes de decidir", models.map((model) => `${model.name}: ${model.decisiveQuestion}`));
-  addPage("Cierre", ["El propósito no es elegir apresuradamente. Es comprender mejor qué podrías construir y qué necesitas averiguar antes de dar tu próximo movimiento."]);
-  const objects: string[] = []; const add = (body: string) => { objects.push(body); return objects.length; }; const catalog: number[] = []; const pageIds: number[] = [];
-  const pagesObject = add("<< /Type /Pages /Kids [] /Count 0 >>"); const fontObject = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
-  for (let i = 0; i < pages.length; i++) { const content = add(`<< /Length ${makePage(pages[i], i + 1).length} >>\nstream\n${makePage(pages[i], i + 1)}\nendstream`); const page = add(`<< /Type /Page /Parent ${pagesObject} 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontObject} 0 R >> >> /Contents ${content} 0 R >>`); pageIds.push(page); }
-  objects[pagesObject - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageIds.length} >>`; const catalogId = add(`<< /Type /Catalog /Pages ${pagesObject} 0 R >>`); let pdf = "%PDF-1.4\n%\xFF\xFF\xFF\xFF\n"; const offsets: number[] = [0]; for (let i = 0; i < objects.length; i++) { offsets.push(Buffer.byteLength(pdf, "binary")); pdf += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`; } const xref = Buffer.byteLength(pdf, "binary"); pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`).join("")}trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`; return Buffer.from(pdf, "binary");
+type PdfLine = { text: string; kind?: "title" | "label" | "body" | "muted" | "accent" };
+function section(label: string, text: string | string[]): PdfLine[] { return [{ text: label, kind: "label" }, ...(Array.isArray(text) ? text.flatMap((item) => wrap(item).map((line) => ({ text: line, kind: "body" as const }))) : wrap(text).map((line) => ({ text: line, kind: "body" as const }))), { text: "", kind: "body" }]; }
+
+function buildPdf(modelId: string, decisionId: DecisionOption["id"]) {
+  const model = MODEL_BY_ID[modelId];
+  if (!model) return null;
+  const option = model.scenario.options.find((item) => item.id === decisionId) || model.scenario.options[0];
+  const lines: PdfLine[] = [
+    { text: "TU PRÓXIMO MOVIMIENTO", kind: "title" },
+    { text: "MI PRIMERA PRUEBA DE REALIDAD", kind: "accent" },
+    { text: `${model.name} · DECISIÓN ${option.id.toUpperCase()} · 48 HORAS`, kind: "muted" },
+    { text: "", kind: "body" },
+    ...section("TU SITUACIÓN", model.scenario.situation),
+    ...section("TU DECISIÓN", option.label),
+    ...section("HIPÓTESIS QUE VAS A COMPROBAR", model.mission.hypothesis),
+    ...section("TRES MOVIMIENTOS", model.mission.movements.map((move, index) => `${index + 1}. ${move}`)),
+    ...section("CONVERSACIÓN PREPARADA", model.mission.conversation),
+    ...section("QUÉ REGISTRAR", model.mission.record.map((item) => `- ${item}`)),
+    ...section("TU PUNTO CIEGO", `${option.blindSpot} Compruébalo así: ${option.verification}`),
+    ...section("EVIDENCIA ÚTIL", model.mission.evidence),
+    ...section("NO ES EVIDENCIA SUFICIENTE", model.mission.notEvidence),
+    ...section("SIGUIENTE DECISIÓN", model.mission.nextDecision),
+  ];
+  const pageLines: PdfLine[][] = [];
+  for (let index = 0; index < lines.length; index += 43) pageLines.push(lines.slice(index, index + 43));
+  const objects: string[] = [];
+  const add = (body: string) => { objects.push(body); return objects.length; };
+  const pagesObject = add("<< /Type /Pages /Kids [] /Count 0 >>");
+  const fontObject = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+  const boldObject = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  const pageIds: number[] = [];
+  for (const [pageIndex, page] of pageLines.entries()) {
+    const contentLines = pageIndex === 0 ? page.slice(3) : page;
+    const commands = ["q", "0.035 0.055 0.09 rg", "0 0 595 842 re", "f", "Q", "BT", "/F2 25 Tf", "0.96 0.94 0.88 rg", "54 785 Td", "(TU PRÓXIMO MOVIMIENTO) Tj", "/F1 10 Tf", "0.77 0.64 0.42 rg", "0 -22 Td", "(MI PRIMERA PRUEBA DE REALIDAD) Tj", "/F1 9 Tf", "0.65 0.71 0.78 rg", "0 -16 Td", `(${escapePdf(`${model.name} · DECISIÓN ${option.id.toUpperCase()} · 48 HORAS`)}) Tj`, "0 -28 Td"];
+    let y = 0;
+    for (const line of contentLines) {
+      if (line.kind === "label") { commands.push("/F2 8 Tf", "0.48 0.85 0.9 rg", `(${escapePdf(line.text)}) Tj`, "0 -14 Td"); y += 14; continue; }
+      if (line.text === "") { commands.push("0 -10 Td"); y += 10; continue; }
+      const size = line.kind === "accent" ? 11 : 10;
+      commands.push(`/F1 ${size} Tf`, line.kind === "muted" ? "0.65 0.71 0.78 rg" : "0.91 0.91 0.88 rg", `(${escapePdf(line.text)}) Tj`, "0 -13 Td"); y += 13;
+      if (y > 710) break;
+    }
+    commands.push("ET");
+    const stream = commands.join("\n");
+    const content = add(`<< /Length ${Buffer.byteLength(stream, "binary")} >>\nstream\n${stream}\nendstream`);
+    pageIds.push(add(`<< /Type /Page /Parent ${pagesObject} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObject} 0 R /F2 ${boldObject} 0 R >> >> /Contents ${content} 0 R >>`));
+  }
+  objects[pagesObject - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageIds.length} >>`;
+  const catalogId = add(`<< /Type /Catalog /Pages ${pagesObject} 0 R >>`);
+  let pdf = "%PDF-1.4\n%\xFF\xFF\xFF\xFF\n"; const offsets: number[] = [0];
+  for (let index = 0; index < objects.length; index++) { offsets.push(Buffer.byteLength(pdf, "binary")); pdf += `${index + 1} 0 obj\n${objects[index]}\nendobj\n`; }
+  const xref = Buffer.byteLength(pdf, "binary"); pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`).join("")}trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return Buffer.from(pdf, "binary");
 }
 
-export async function POST(request: Request) { try { const body = await request.json() as { selection?: unknown; intent?: unknown }; const selection = Array.isArray(body.selection) ? body.selection.filter((id): id is string => typeof id === "string" && Boolean(MODEL_BY_ID[id])).slice(0, 3) : []; const intent = typeof body.intent === "string" ? body.intent.slice(0, 140) : "Explorar nuevas posibilidades empresariales."; if (!selection.length) return NextResponse.json({ error: "selection_required" }, { status: 400 }); return new NextResponse(buildPdf(selection, intent), { headers: { "content-type": "application/pdf", "content-disposition": "attachment; filename=tu-proximo-movimiento.pdf", "cache-control": "no-store" } }); } catch { return NextResponse.json({ error: "invalid_payload" }, { status: 400 }); } }
+export async function POST(request: Request) {
+  try {
+    const body = await request.json() as { modelId?: unknown; decisionId?: unknown };
+    const modelId = typeof body.modelId === "string" ? body.modelId : "";
+    const decisionId = body.decisionId === "a" || body.decisionId === "b" || body.decisionId === "c" ? body.decisionId : "a";
+    const pdf = buildPdf(modelId, decisionId);
+    if (!pdf) return NextResponse.json({ error: "model_required" }, { status: 400 });
+    return new NextResponse(pdf, { headers: { "content-type": "application/pdf", "content-disposition": "attachment; filename=tu-primera-prueba-de-realidad.pdf", "cache-control": "no-store" } });
+  } catch { return NextResponse.json({ error: "invalid_payload" }, { status: 400 }); }
+}
