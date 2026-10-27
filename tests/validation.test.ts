@@ -215,7 +215,7 @@ describe("VETTA registration contract", () => {
   it("keeps the welcome and gift as separate messages with one link each", () => {
     const text = buildOperationalWelcomeText("Genubath Roa", "https://chat.whatsapp.com/example");
     expect(text).toContain("https://chat.whatsapp.com/example");
-    expect(text).toContain("20 y 22 de octubre");
+    expect(text).toContain("3 y 5 de noviembre");
     expect(text).not.toContain("accesos operativos");
     expect(text).not.toContain("/matriz");
     const gift = buildOperationalMatrixText("https://noemprendas.gritlab.pro/matriz");

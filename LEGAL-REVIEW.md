@@ -90,7 +90,7 @@ Antes de activar el formulario, confirmar:
 
 ### Objeto
 
-**NO EMPRENDAS TODAVÍA** es una masterclass en vivo compuesta por dos encuentros previstos para el martes 20 y el jueves 22 de octubre de 2026, a las 8:00 p. m., hora de Colombia, sujetos a confirmación operativa y a la información final publicada por el responsable.
+**NO EMPRENDAS TODAVÍA** es una masterclass en vivo compuesta por dos encuentros previstos para el martes 3 y el jueves 5 de noviembre de 2026, a las 8:00 p. m., hora de Colombia, sujetos a confirmación operativa y a la información final publicada por el responsable.
 
 La experiencia enseña criterios para evaluar oportunidades de negocio antes de comprometer tiempo, dinero o energía. La matriz **EL FILTRO ANTES DEL SÍ** es un recurso práctico complementario que se entrega mediante el flujo operativo de WhatsApp después de completar los pasos indicados.
 

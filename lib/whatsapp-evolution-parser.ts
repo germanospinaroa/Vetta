@@ -23,7 +23,7 @@ export function extractRegistrationCode(value: unknown): string | null {
 
 export function buildOperationalWelcomeText(name: string, groupLink: string) {
   const firstName = name.trim().split(/\s+/)[0] || name;
-  return `¡Hola, ${firstName}! 👋\n\n¡Bienvenido a *NO EMPRENDAS TODAVÍA*! 🎉\n\nTu inscripción está confirmada.\n\nTenemos dos encuentros preparados para abrir nuevas perspectivas y explorar otras posibilidades de emprender.\n\n📅 *20 y 22 de octubre*\n🕗 *8:00 p. m. · Hora de Colombia*\n\nLo primero es unirte a nuestro grupo privado. Allí compartiremos los accesos a los encuentros y las novedades importantes.\n\n👇 *Ingresa aquí:*\n${groupLink}\n\n¡Nos vemos dentro! 🚀`;
+  return `¡Hola, ${firstName}! 👋\n\n¡Bienvenido a *NO EMPRENDAS TODAVÍA*! 🎉\n\nTu inscripción está confirmada.\n\nTenemos dos encuentros preparados para abrir nuevas perspectivas y explorar otras posibilidades de emprender.\n\n📅 *3 y 5 de noviembre*\n🕗 *8:00 p. m. · Hora de Colombia*\n\nLo primero es unirte a nuestro grupo privado. Allí compartiremos los accesos a los encuentros y las novedades importantes.\n\n👇 *Ingresa aquí:*\n${groupLink}\n\n¡Nos vemos dentro! 🚀`;
 }
 
 export function buildOperationalMatrixText(matrixUrl: string) {
