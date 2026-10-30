@@ -1,3 +1,14 @@
+export function buildGroupInvitationHref(groupUrl: string | undefined) {
+  if (!groupUrl) return undefined;
+  try {
+    const url = new URL(groupUrl.trim());
+    if (url.protocol !== "https:" || url.hostname !== "chat.whatsapp.com" || !url.pathname.slice(1)) return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
 export function buildWhatsAppHref(number: string | undefined, name: string, registrationCode: string) {
   if (!number) return undefined;
   const digits = number.replace(/\D/g, "");

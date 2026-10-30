@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPublicConfig } from "@/lib/config";
 import { saveDemoLead } from "@/lib/demo-store";
-import { buildWhatsAppHref } from "@/lib/whatsapp";
+import { buildGroupInvitationHref } from "@/lib/whatsapp";
 import { persistRegistration } from "@/lib/persistence";
 import { normalizeWhatsApp, registrationSchema } from "@/lib/validation";
 import { createConfirmationToken } from "@/lib/confirmation";
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       existing: false,
       newRegistration: true,
       registrationCode: lead.registrationCode,
-      whatsappHref: buildWhatsAppHref(config.whatsappNumber, lead.name, lead.registrationCode),
+      groupInvitationHref: buildGroupInvitationHref(config.cohort.groupUrl),
       mode: config.demoMode ? "TEST" : "LIVE",
       ...(metaEventId ? { metaEventId } : {}),
     });
