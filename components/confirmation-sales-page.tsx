@@ -8,15 +8,15 @@ type ConfirmationSalesPageProps = {
   confirmed: boolean;
   firstName?: string;
   registrationCode?: string;
-  groupInvitationHref?: string;
+  whatsappHref?: string;
 };
 
-export function ConfirmationSalesPage({ confirmed, firstName, registrationCode, groupInvitationHref }: ConfirmationSalesPageProps) {
+export function ConfirmationSalesPage({ confirmed, firstName, registrationCode, whatsappHref }: ConfirmationSalesPageProps) {
   useEffect(() => {
     if (confirmed) trackClarityEvent("registration_confirmed");
   }, [confirmed]);
 
-  function recordGroupInvitationClick() {
+  function recordWhatsAppClick() {
     trackMetaWhatsAppClick();
     trackClarityEvent("whatsapp_clicked");
     void fetch("/api/events", {
@@ -25,7 +25,7 @@ export function ConfirmationSalesPage({ confirmed, firstName, registrationCode, 
       body: JSON.stringify({
         name: "whatsapp_clicked",
         registrationCode,
-        properties: { destination: "group_invitation" },
+        properties: { destination: "commercial_whatsapp" },
       }),
     });
   }
@@ -37,18 +37,18 @@ export function ConfirmationSalesPage({ confirmed, firstName, registrationCode, 
           <>
             <span className="sales-confirmation-index">REGISTRO CONFIRMADO</span>
             <h1>{firstName ? `¡${firstName}, tu inscripción está confirmada!` : "¡Tu inscripción está confirmada!"}</h1>
-            <p className="sales-confirmation-lead">Únete directamente al grupo privado <strong>Antes de Emprender</strong> para recibir las instrucciones de la experiencia.</p>
-            <p className="sales-confirmation-lead">No necesitas enviar un mensaje previo: acepta la invitación desde WhatsApp.</p>
-            {groupInvitationHref ? (
-              <a className="sales-button" href={groupInvitationHref} target="_blank" rel="noreferrer" onClick={recordGroupInvitationClick}>
-                UNIRME AL GRUPO DE WHATSAPP <span aria-hidden="true">→</span>
+            <p className="sales-confirmation-lead">Reclama tu regalo por WhatsApp y recibe las instrucciones para ingresar al grupo privado <strong>Antes de Emprender</strong>.</p>
+            <p className="sales-confirmation-lead">El mensaje se abrirá preparado con tu inscripción. Envíalo para que el equipo pueda responderte.</p>
+            {whatsappHref ? (
+              <a className="sales-button" href={whatsappHref} target="_blank" rel="noreferrer" onClick={recordWhatsAppClick}>
+                RECLAMA TU REGALO POR WHATSAPP <span aria-hidden="true">→</span>
               </a>
             ) : (
-              <p className="sales-preopen">No podemos preparar la invitación porque el enlace oficial del grupo todavía no está configurado. Solicita ayuda a soporte.</p>
+              <p className="sales-preopen">No podemos preparar el mensaje porque falta el número comercial de WhatsApp. Solicita ayuda a soporte.</p>
             )}
             <div className="sales-confirmation-gift">
               <h2>🎁 TU PRÓXIMO MOVIMIENTO te espera</h2>
-              <p>Después de ingresar al grupo, recibirás la bienvenida y, aproximadamente dos minutos después, el enlace de TU PRÓXIMO MOVIMIENTO.</p>
+              <p>Después de enviar el mensaje, recibirás la bienvenida, el enlace del grupo y, aproximadamente dos minutos después, el enlace de TU PRÓXIMO MOVIMIENTO.</p>
             </div>
           </>
         ) : (

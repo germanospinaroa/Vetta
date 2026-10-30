@@ -4,7 +4,7 @@ import { getPublicConfig } from "@/lib/config";
 import { cookies } from "next/headers";
 import { verifyConfirmationToken, verifyRecoveryToken } from "@/lib/confirmation";
 import { findPersistedRegistration, findPersistedRegistrationById } from "@/lib/persistence";
-import { buildGroupInvitationHref } from "@/lib/whatsapp";
+import { buildWhatsAppHref } from "@/lib/whatsapp";
 
 export const metadata: Metadata = { title: "Confirmación | NO EMPRENDAS TODAVÍA.", robots: { index: false, follow: false } };
 export default async function ConfirmationPage({ searchParams }: { searchParams: Promise<{ code?: string; recovery?: string }> }) {
@@ -18,7 +18,7 @@ export default async function ConfirmationPage({ searchParams }: { searchParams:
     : recovery
       ? await findPersistedRegistrationById(recovery.leadId, config.cohort.id)
       : null;
-  const groupInvitationHref = lead ? buildGroupInvitationHref(config.cohort.groupUrl) : undefined;
+  const whatsappHref = lead ? buildWhatsAppHref(config.whatsappNumber, lead.name, lead.registrationCode) : undefined;
   const firstName = lead?.name.trim().split(/\s+/)[0];
-  return <ConfirmationSalesPage confirmed={Boolean(lead)} firstName={firstName} registrationCode={lead?.registrationCode} groupInvitationHref={groupInvitationHref} />;
+  return <ConfirmationSalesPage confirmed={Boolean(lead)} firstName={firstName} registrationCode={lead?.registrationCode} whatsappHref={whatsappHref} />;
 }

@@ -14,7 +14,7 @@ const countries = getCountries()
   .sort((a, b) => a[1].localeCompare(b[1], "es"));
 const emptyCountryOptions: readonly (readonly [string, string])[] = [];
 
-type Result = { ok: true; registrationCode?: string; metaEventId?: string; groupInvitationHref?: string; mode: "TEST" | "LIVE"; existing?: boolean; newRegistration?: boolean; firstName?: string } | { ok: false; message: string };
+type Result = { ok: true; registrationCode?: string; metaEventId?: string; whatsappHref?: string; mode: "TEST" | "LIVE"; existing?: boolean; newRegistration?: boolean; firstName?: string } | { ok: false; message: string };
 
 export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSuccess?: boolean }) {
   const router = useRouter();
@@ -99,16 +99,16 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         <h2>¡{result.firstName || "Ya"}, ya estás más cerca!</h2>
         <p>Ahora vamos a darte acceso al grupo privado <strong>Antes de Emprender</strong>.</p>
         <div className="success-highlight"><strong>Importante: debes estar en el grupo.</strong><br />Es nuestro <strong>único canal oficial</strong> para compartir los enlaces de acceso, recordatorios e información de la masterclass. <strong>Si no ingresas, no recibirás esa información.</strong></div>
-        <p>Pulsa el botón para aceptar directamente la invitación al grupo privado en WhatsApp.</p>
+        <p>Pulsa el botón para reclamar tu regalo y recibir las instrucciones de acceso por WhatsApp.</p>
         {result.registrationCode && <div className="registration-code"><span>Código</span><strong>{result.registrationCode}</strong></div>}
-        {result.groupInvitationHref ? (
-          <a className="button button-dark" href={result.groupInvitationHref} target="_blank" rel="noreferrer" onClick={() => { trackMetaWhatsAppClick(); trackClarityEvent("whatsapp_clicked"); const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode, properties: { destination: "group_invitation" } } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration", destination: "group_invitation" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
-            UNIRME AL GRUPO DE WHATSAPP <span aria-hidden="true">↗</span>
+        {result.whatsappHref ? (
+          <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => { trackMetaWhatsAppClick(); trackClarityEvent("whatsapp_clicked"); const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode, properties: { destination: "commercial_whatsapp" } } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration", destination: "commercial_whatsapp" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
+            RECLAMA TU REGALO POR WHATSAPP <span aria-hidden="true">↗</span>
           </a>
         ) : (
-          <p className="config-note">Configuración TEST pendiente: el enlace oficial del grupo todavía no está configurado.</p>
+          <p className="config-note">Configuración TEST pendiente: el número oficial de WhatsApp todavía no está configurado.</p>
         )}
-        <p className="success-gift-note">🎁 Después de ingresar al grupo, recibirás la bienvenida y, aproximadamente dos minutos después, <strong>EL FILTRO ANTES DEL SÍ</strong>.</p>
+        <p className="success-gift-note">🎁 Reclama tu regalo por WhatsApp para recibir la bienvenida, las instrucciones del grupo y, aproximadamente dos minutos después, <strong>EL FILTRO ANTES DEL SÍ</strong>.</p>
         <button className="text-button" type="button" onClick={() => { setState("idle"); setResult(null); }}>Registrar otra persona</button>
       </div>
     );
