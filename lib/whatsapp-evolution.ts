@@ -191,7 +191,6 @@ export async function processEvolutionMessage(payload: unknown) {
   const { error: inboundError } = await client.from("whatsapp_inbound_messages").insert({ provider_message_id: message.providerMessageId, instance_name: INSTANCE, sender_jid: message.senderJid, sender_e164: message.senderE164 || null, lead_id: resolution.lead.id, event_name: message.eventName, message_kind: "text", message_hash: createHash("sha256").update(message.text).digest("hex"), action: listo ? "listo_received" : "identified", error_code: null, processed_at: new Date().toISOString() });
   if (inboundError) throw new Error("inbound_persistence_failed");
   await recordEvent(client, resolution.lead.id, "conversation_confirmed", { source: "evolution", automated: true });
-  await recordEvent(client, resolution.lead.id, "whatsapp_clicked", { source: "evolution", automated: true });
   if (listo) await recordEvent(client, resolution.lead.id, "group_join_declared", { source: "whatsapp", automated: false });
   const delivery = message.registrationCode ? await deliverWelcomeForConversation(client, resolution.conversation, resolution.lead, true) : null;
   return { action: delivery?.welcome.sent ? "welcomed" as const : "identified" as const, welcomeDuplicate: Boolean(delivery?.welcome.duplicate) };
