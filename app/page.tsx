@@ -8,7 +8,7 @@ import { hasValidQaSession, qaSessionCookieName } from "@/lib/qa-session";
 const siteUrl = "https://noemprendas.gritlab.pro";
 const ogImage = `${siteUrl}/og-no-emprendas.png`;
 const ogTitle = "NO EMPRENDAS TODAVÍA. ¿Y si hay más de lo que imaginas?";
-const ogDescription = "Dos encuentros en vivo para ampliar tu perspectiva y explorar nuevas posibilidades de emprender. 3 y 5 de noviembre · 8:00 p. m. Colombia. Reserva tu lugar.";
+const ogDescription = "Dos encuentros en vivo para ampliar tu perspectiva y explorar nuevas posibilidades de emprender. 17 y 19 de noviembre · 8:00 p. m. Colombia. Reserva tu lugar.";
 
 export const metadata: Metadata = {
   title: ogTitle,

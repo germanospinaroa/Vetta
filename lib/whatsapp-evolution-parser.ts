@@ -23,11 +23,11 @@ export function extractRegistrationCode(value: unknown): string | null {
 
 export function buildOperationalWelcomeText(name: string, groupLink: string) {
   const firstName = name.trim().split(/\s+/)[0] || name;
-  return `¡Hola, ${firstName}! 👋\n\n¡Bienvenido a *NO EMPRENDAS TODAVÍA*! 🎉\n\nTu inscripción está confirmada.\n\nTenemos dos encuentros preparados para abrir nuevas perspectivas y explorar otras posibilidades de emprender.\n\n📅 *3 y 5 de noviembre*\n🕗 *8:00 p. m. · Hora de Colombia*\n\nLo primero es unirte a nuestro grupo privado. Allí compartiremos los accesos a los encuentros y las novedades importantes.\n\n👇 *Ingresa aquí:*\n${groupLink}\n\n¡Nos vemos dentro! 🚀`;
+  return `¡Hola, ${firstName}! 👋\n\n¡Bienvenido a *NO EMPRENDAS TODAVÍA*!\n\nTu inscripción quedó confirmada.\n\nNos vemos el martes 17 y jueves 19 de noviembre a las 8:00 p. m., hora Colombia.\n\nEste es el enlace de nuestro grupo privado:\n${groupLink}\n\nÚnete para recibir los avisos y enlaces de conexión.\n\nEn unos minutos recibirás también tu regalo digital.`;
 }
 
 export function buildOperationalMatrixText(matrixUrl: string) {
-  return `🎁 *¡Y ahora sí, un regalo para ti!*\n\nExplora seis maneras de construir una actividad empresarial, comprende qué hay detrás y compara tus próximos movimientos.\n\nPor eso preparamos *TU PRÓXIMO MOVIMIENTO*, una experiencia para descubrir tu siguiente posibilidad.\n\n✨ Puedes entrar aunque todavía estés explorando.\n\n👇 *Descubre la experiencia:*\n${matrixUrl}`;
+  return `¡Aquí tienes tu regalo!\n\n*TU PRÓXIMO MOVIMIENTO*\n\nUna experiencia interactiva para explorar diferentes formas de emprender y descubrir cómo comenzar a evaluar tus posibilidades.\n\nAccede aquí:\n${matrixUrl}\n\nGuárdalo y tómate unos minutos para explorarlo antes de nuestra masterclass.`;
 }
 
 export function validateWhatsAppGroupUrl(value: unknown) {

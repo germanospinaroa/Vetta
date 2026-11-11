@@ -16,7 +16,7 @@ export default function TermsPage() {
         <p className="section-kicker">Información de participación</p>
         <h1>Términos de participación</h1>
         <p>
-          Estos términos describen la participación en <strong>NO EMPRENDAS TODAVÍA</strong>, una experiencia educativa en vivo de dos encuentros previstos para el martes 3 y el jueves 5 de noviembre de 2026, a las 8:00 p. m., hora de Colombia, sujetos a la información operativa publicada por el responsable.
+          Estos términos describen la participación en <strong>NO EMPRENDAS TODAVÍA</strong>, una experiencia educativa en vivo de dos encuentros previstos para el martes 17 y el jueves 19 de noviembre de 2026, a las 8:00 p. m., hora de Colombia, sujetos a la información operativa publicada por el responsable.
         </p>
 
         <h2>Objeto</h2>
