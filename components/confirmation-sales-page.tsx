@@ -4,68 +4,11 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { trackClarityEvent, trackMetaWhatsAppClick } from "@/lib/analytics";
 
-type ConfirmationSalesPageProps = {
-  confirmed: boolean;
-  firstName?: string;
-  registrationCode?: string;
-  whatsappHref?: string;
-  groupInvitationHref?: string;
-  tuesdayLabel?: string;
-  thursdayLabel?: string;
-};
+type Props = { confirmed: boolean; firstName?: string; registrationCode?: string; whatsappHref?: string; groupInvitationHref?: string; tuesdayLabel?: string; thursdayLabel?: string };
 
-export function ConfirmationSalesPage({ confirmed, firstName, registrationCode, whatsappHref, groupInvitationHref, tuesdayLabel, thursdayLabel }: ConfirmationSalesPageProps) {
-  useEffect(() => {
-    if (confirmed) trackClarityEvent("registration_confirmed");
-  }, [confirmed]);
-
-  function recordWhatsAppClick() {
-    trackMetaWhatsAppClick();
-    trackClarityEvent("whatsapp_clicked");
-    void fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "whatsapp_clicked",
-        registrationCode,
-        properties: { destination: "commercial_whatsapp" },
-      }),
-    });
-  }
-
-  return (
-    <main className="sales-page sales-confirmation-page">
-      <div className="sales-shell sales-confirmation-shell" data-clarity-mask="true">
-        {confirmed ? (
-          <>
-            <span className="sales-confirmation-index">INSCRIPCIÓN REGISTRADA</span>
-            <h1>¡YA ESTÁS CASI ADENTRO!</h1>
-            <p className="sales-confirmation-lead">Tu inscripción está registrada. Ahora solo faltan dos pasos para asegurar que recibas toda la información de la masterclass.</p>
-            <p className="sales-confirmation-date">{tuesdayLabel || "17 de noviembre de 2026"} y {thursdayLabel || "19 de noviembre de 2026"} · 8:00 p. m. (Colombia)</p>
-            <section className="sales-confirmation-step"><span className="sales-confirmation-index">PASO 1</span><h2>1. CONFIRMA TU WHATSAPP</h2><p>Toca el botón y envía el mensaje que ya preparamos para ti. Así podremos reconocer tu inscripción y enviarte tu regalo.</p>{registrationCode ? <p>Tu código: <strong>{registrationCode}</strong></p> : null}
-            {whatsappHref ? (
-              <a className="sales-button" href={whatsappHref} target="_blank" rel="noreferrer" onClick={recordWhatsAppClick}>
-                ENVIAR MI CÓDIGO POR WHATSAPP <span aria-hidden="true">→</span>
-              </a>
-            ) : (
-              <p className="sales-preopen">No podemos preparar el mensaje porque falta el número comercial de WhatsApp. Solicita ayuda a soporte.</p>
-            )}<p>Es importante que pulses Enviar dentro de WhatsApp. Abrir la conversación no confirma tu registro.</p></section>
-            <section className="sales-confirmation-step"><span className="sales-confirmation-index">PASO 2</span><h2>2. ENTRA AL GRUPO PRIVADO</h2><p>En el grupo recibirás los avisos importantes y los enlaces para conectarte a las dos sesiones.</p>{groupInvitationHref ? <a className="sales-button sales-button-secondary" href={groupInvitationHref} target="_blank" rel="noreferrer">UNIRME AL GRUPO DE LA MASTERCLASS <span aria-hidden="true">→</span></a> : <p className="sales-preopen">El enlace del grupo no está disponible temporalmente.</p>}<p>No podemos confirmar la membresía solo por pulsar este botón.</p></section>
-            <div className="sales-confirmation-gift">
-              <h2>Y TENEMOS UN REGALO PARA TI</h2>
-              <p>Al confirmar tu WhatsApp, te enviaremos TU PRÓXIMO MOVIMIENTO, una experiencia interactiva para descubrir diferentes caminos de emprendimiento y aprender cómo ponerlos a prueba.</p><p>Te llegará por WhatsApp en unos minutos.</p>
-            </div>
-          </>
-        ) : (
-          <>
-            <h1>Esta página se abre después de confirmar tu registro.</h1>
-            <p className="sales-confirmation-lead">Vuelve a la página de registro y completa el proceso para recibir las instrucciones correctas.</p>
-            <Link className="sales-button" href="/registro" onClick={() => trackClarityEvent("cta_clicked")}>
-              VOLVER AL REGISTRO <span aria-hidden="true">→</span>
-            </Link>
-          </>
-        )}
-      </div>
-    </main>
-  );
+export function ConfirmationSalesPage({ confirmed, registrationCode, whatsappHref, groupInvitationHref }: Props) {
+  useEffect(() => { if (confirmed) trackClarityEvent("registration_confirmed"); }, [confirmed]);
+  function recordWhatsAppClick() { trackMetaWhatsAppClick(); trackClarityEvent("whatsapp_clicked"); void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "whatsapp_clicked", registrationCode, properties: { destination: "commercial_whatsapp" } }) }); }
+  function recordGroupClick() { void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "whatsapp_clicked", registrationCode, properties: { destination: "group_invitation" } }) }); }
+  return <main className="v4-page v4-confirmation-page"><a className="v4-skip" href="#confirmation-main">Saltar al contenido</a><header className="v4-header"><div className="v4-shell v4-header-inner"><Link href="/" className="v4-brand">NO EMPRENDAS TODAVÍA.</Link><span className="v4-header-actions">17 Y 19 DE NOVIEMBRE · 8:00 P. M. COLOMBIA</span></div></header><div className="v4-shell v4-confirmation-layout" id="confirmation-main">{confirmed ? <section className="v4-confirmation-card" data-clarity-mask="true"><p className="v4-eyebrow">INSCRIPCIÓN RECIBIDA</p><h1>¡YA ESTÁS CASI ADENTRO!</h1><p className="v4-confirmation-subtitle">Tu registro está guardado. Solo faltan dos pasos para recibir los accesos y tu regalo.</p><div className="v4-code"><span>TU CÓDIGO DE INSCRIPCIÓN</span><strong>{registrationCode}</strong></div><div className="v4-confirmation-step"><b>01</b><div><h2>1. ENVÍA TU CÓDIGO POR WHATSAPP</h2><p>Pulsa el botón, abre la conversación y envía el mensaje que preparamos para ti. Solo abrir WhatsApp no confirma tu inscripción.</p>{whatsappHref ? <a className="v4-button" href={whatsappHref} target="_blank" rel="noreferrer" onClick={recordWhatsAppClick}>ENVIAR MI CÓDIGO POR WHATSAPP <span aria-hidden="true">→</span></a> : <p className="v4-status">No podemos preparar el mensaje porque falta el número comercial de WhatsApp.</p>}</div></div><div className="v4-confirmation-step"><b>02</b><div><h2>2. ENTRA AL GRUPO PRIVADO</h2><p>En el grupo compartiremos los avisos y los enlaces para conectarte a los encuentros.</p>{groupInvitationHref ? <a className="v4-button v4-button-secondary" href={groupInvitationHref} target="_blank" rel="noreferrer" onClick={recordGroupClick}>ENTRAR AL GRUPO DE LA MASTERCLASS <span aria-hidden="true">→</span></a> : <p className="v4-status">El enlace del grupo no está disponible temporalmente.</p>}</div></div><div className="v4-confirmation-gift"><p className="v4-eyebrow">TU REGALO ESTÁ PREPARADO</p><h2>Cuando envíes tu código, recibirás por el chat privado de WhatsApp el acceso a TU PRÓXIMO MOVIMIENTO, una experiencia interactiva para explorar caminos de emprendimiento.</h2></div><p className="v4-confirmation-date">17 Y 19 DE NOVIEMBRE · 8:00 P. M. COLOMBIA</p><p className="v4-confirmation-note">Si ya enviaste el código, no necesitas enviarlo otra vez.</p></section> : <section className="v4-confirmation-card"><p className="v4-eyebrow">INSCRIPCIÓN</p><h1>Esta página se abre después de confirmar tu registro.</h1><p className="v4-confirmation-subtitle">Vuelve a la página de registro y completa el proceso para recibir las instrucciones correctas.</p><Link className="v4-button" href="/registro">VOLVER AL REGISTRO <span aria-hidden="true">→</span></Link></section>}</div></main>;
 }

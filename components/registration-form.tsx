@@ -45,6 +45,13 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     setErrors({});
     const form = new FormData(event.currentTarget);
     const payload = Object.fromEntries(form.entries());
+    const localErrors: Record<string, string> = {};
+    if (!String(payload.name || "").trim()) localErrors.name = "Escribe tu nombre para continuar.";
+    if (!String(payload.country || "").trim()) localErrors.country = "Selecciona el país de tu número.";
+    if (!String(payload.whatsapp || "").trim()) localErrors.whatsapp = "Revisa el número de WhatsApp e inténtalo de nuevo.";
+    if (!String(payload.city || "").trim()) localErrors.city = "Escribe tu ciudad para continuar.";
+    if (payload.consent !== "on") localErrors.consent = "Necesitamos que revises y aceptes las condiciones para continuar.";
+    if (Object.keys(localErrors).length) { setErrors(localErrors); setState("error"); setResult({ ok: false, message: "Revisa los campos marcados para continuar." }); return; }
     const queryAttribution = readAttribution(window.location.search);
     let storedAttribution: Record<string, string> = {};
     try {
@@ -97,34 +104,32 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
       <div className="success-panel" role="status" aria-live="polite">
         <span className="success-index">REGISTRO RECIBIDO</span>
         <h2>¡{result.firstName || "Ya"}, ya estás más cerca!</h2>
-        <p>Ahora vamos a darte acceso al grupo privado <strong>Antes de Emprender</strong>.</p>
-        <div className="success-highlight"><strong>Importante: debes estar en el grupo.</strong><br />Es nuestro <strong>único canal oficial</strong> para compartir los enlaces de acceso, recordatorios e información de la masterclass. <strong>Si no ingresas, no recibirás esa información.</strong></div>
-        <p>Pulsa el botón para reclamar tu regalo y recibir las instrucciones de acceso por WhatsApp.</p>
-        {result.registrationCode && <div className="registration-code"><span>Código</span><strong>{result.registrationCode}</strong></div>}
+        <p>Completa los siguientes pasos para recibir los accesos y tu regalo.</p>
+        {result.registrationCode && <div className="registration-code"><span>TU CÓDIGO DE INSCRIPCIÓN</span><strong>{result.registrationCode}</strong></div>}
         {result.whatsappHref ? (
           <a className="button button-dark" href={result.whatsappHref} target="_blank" rel="noreferrer" onClick={() => { trackMetaWhatsAppClick(); trackClarityEvent("whatsapp_clicked"); const event = result.registrationCode ? { name: "whatsapp_clicked", registrationCode: result.registrationCode, properties: { destination: "commercial_whatsapp" } } : { name: "whatsapp_clicked", properties: { continuation: "existing_registration", destination: "commercial_whatsapp" } }; void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(event) }); }}>
-            RECLAMA TU REGALO POR WHATSAPP <span aria-hidden="true">↗</span>
+            ENVIAR MI CÓDIGO POR WHATSAPP <span aria-hidden="true">→</span>
           </a>
         ) : (
           <p className="config-note">Configuración TEST pendiente: el número oficial de WhatsApp todavía no está configurado.</p>
         )}
-        <p className="success-gift-note">🎁 Reclama tu regalo por WhatsApp para recibir la bienvenida, las instrucciones del grupo y, aproximadamente dos minutos después, <strong>EL FILTRO ANTES DEL SÍ</strong>.</p>
+        <p className="success-gift-note">En el siguiente paso confirmarás tu inscripción por WhatsApp y podrás entrar al grupo.</p>
         <button className="text-button" type="button" onClick={() => { setState("idle"); setResult(null); }}>Registrar otra persona</button>
       </div>
     );
   }
 
   return (
-    <form id="demo-form" className="registration-form" data-clarity-mask="true" onSubmit={submit} onFocus={markStarted}>
+    <form id="demo-form" className="registration-form" data-clarity-mask="true" onSubmit={submit} onFocus={markStarted} noValidate>
       <div className="form-fields">
-        <div className="field"><label htmlFor="country">País</label><select id="country" name="country" value={country} onChange={(event) => setCountry(event.target.value)} required>{countryOptions.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div>
-        <div className="field"><label htmlFor="name">Nombre</label><input id="name" name="name" autoComplete="name" required placeholder="Tu nombre" /></div>
-        <div className="field"><label htmlFor="whatsapp">WhatsApp</label><div className="phone-input"><span aria-hidden="true">+{getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}</span><input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="tel-national" required placeholder="300 000 0000" aria-label={`Número de WhatsApp sin prefijo para +${getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}`} /></div></div>
-        <div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" required placeholder="Tu ciudad" /></div>
-        <label className="consent"><input type="checkbox" name="consent" required /><span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso de privacidad</a>.</span></label>
+        <div className="field"><label htmlFor="country">País del número</label><select id="country" name="country" value={country} onChange={(event) => setCountry(event.target.value)} aria-describedby={errors.country ? "country-error" : undefined}>{countryOptions.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>{errors.country && <small className="field-error" id="country-error">{errors.country}</small>}</div>
+        <div className="field"><label htmlFor="name">Nombre</label><input id="name" name="name" autoComplete="name" placeholder="Tu nombre" aria-describedby={errors.name ? "name-error" : undefined} />{errors.name && <small className="field-error" id="name-error">{errors.name}</small>}</div>
+        <div className="field"><label htmlFor="whatsapp">Número de WhatsApp</label><div className="phone-input"><span aria-hidden="true">+{getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}</span><input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="300 000 0000" aria-label={`Número de WhatsApp sin prefijo para +${getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}`} aria-describedby={errors.whatsapp ? "whatsapp-error" : "whatsapp-help"} /></div><p className="field-help" id="whatsapp-help">Necesitamos el número para tu inscripción, pero la confirmación se realizará cuando tú nos envíes el código por WhatsApp.</p>{errors.whatsapp && <small className="field-error" id="whatsapp-error">{errors.whatsapp}</small>}</div>
+        <div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" placeholder="Tu ciudad" aria-describedby={errors.city ? "city-error" : undefined} />{errors.city && <small className="field-error" id="city-error">{errors.city}</small>}</div>
+        <label className="consent"><input type="checkbox" name="consent" aria-describedby={errors.consent ? "consent-error" : undefined} /><span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso de privacidad</a>.</span></label>{errors.consent && <small className="field-error" id="consent-error">{errors.consent}</small>}
         {state === "error" && <p className="form-error" role="alert">{result && !result.ok ? result.message : "Revisa los campos y vuelve a intentarlo."}</p>}
-        <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Guardando tu inscripción…" : "CONFIRMAR MI INSCRIPCIÓN"}<span aria-hidden="true">↗</span></button>
-        <p className="form-footnote">Recibirás el regalo después de ingresar al grupo privado.</p>
+        <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Guardando tu inscripción…" : "RESERVAR MI LUGAR Y CONTINUAR"}<span aria-hidden="true">→</span></button>
+        <p className="form-footnote">En el siguiente paso confirmarás tu inscripción por WhatsApp y podrás entrar al grupo.</p>
       </div>
     </form>
   );

@@ -1,201 +1,129 @@
-# VETTA — DESIGN.md
+# DISEÑO ESPECIFICADO — VETTA / NO EMPRENDAS TODAVÍA
 
-## Current public landing system — premium editorial reconstruction
+## Concepto rector: «EL MOMENTO ANTES DEL SÍ»
 
-The current public landing is a restrained cinematic editorial system for NO EMPRENDAS TODAVÍA., not SAVORA and not a generic SaaS template. It uses the existing photography, a cool mineral background, midnight ink, signal blue and a controlled gold accent for the gift. The narrative has five clear movements: immediate promise, better questions, two-session experience, WhatsApp-delivered gift, and decisive closing CTA.
+La landing debe sentirse como una pieza editorial contemporánea sobre decisiones empresariales: contrastes elegantes, ritmo, fotografía real cuando aporta evidencia y tipografía contundente. **No** como una web SaaS, un catálogo de cards, un curso con cronómetro ni un funnel genérico.
 
-- Display/UI: Manrope and Inter already loaded by Next font; no new dependency.
-- Layout: 1200px shell, 52/48 hero composition, large editorial section headings, asymmetric value rows, two-session split, dark gift chapter, FAQ disclosure and strong closing panel.
-- Components: `SalesLanding`, `SalesCta`, `StickySalesCta`, existing registration form and existing confirmation page. The public landing has no form; all registration CTAs go to `/registro`.
-- Motion: only opacity/transform and native details disclosure; no scrolljacking, autoplay, parallax or invented interactions. Reduced motion removes transitions.
-- Responsive contract: mobile-first reflow; hero CTA stays in the first view; session columns stack; FAQ remains keyboard accessible; controls target at least 44px.
-- Content contract: use `COPY_APPROVED.md` and `PRODUCT_CONTEXT.md`; never invent proof, scarcity, financial outcomes, hosts or operational URLs.
+La diferencia visual central: la página demuestra el método con la tensión **«lo que te dicen» / «lo que tienes que comprobar»**, en vez de enumerar supuestos beneficios de forma genérica.
 
-This file is the visual authority for VETTA v1. Other skills may suggest improvements, but may not override these decisions without an explicit project decision.
+## 1. Sistema visual definitivo
 
-## 1. Brand personality
-
-- Sophisticated, intelligent, contemporary, selective, warm without being casual.
-- Observable behavior: short copy blocks, editorial hierarchy, generous space, precise labels, calm interactions, no hype.
-- Avoid: network-marketing clichés, coaching language, wealth imagery, fake authority, urgency theatre, glossy “luxury” effects.
-
-## 2. Product and primary action
-
-- Ecosystem: VETTA, organised by Elite Focus and transparently linked to Zilis.
-- Experience: `NO EMPRENDAS TODAVÍA`.
-- Primary action: `Reservar mi lugar` in the integrated registration flow.
-- Success action: `Confirmar mi acceso por WhatsApp`, only when a real configured number exists.
-- Desired feeling: the visitor feels respected as a thoughtful decision-maker, not pressured as a lead.
-
-## 3. Visual thesis and signature move
-
-Use an editorial “decision line”: a thin warm line and paired markers connect **evaluar** to **decidir** across the hero and two-session section. It creates continuity without scrolljacking, and it collapses into a readable vertical sequence on mobile.
-
-## 4. References and boundaries
-
-| Reference direction | May inform | Must not copy |
+| Token | Valor | Uso |
 |---|---|---|
-| Contemporary editorial magazines | asymmetric rhythm, large type, margin notes | logos, layouts, copy, photography, or brand identity |
-| Premium consulting reports | restraint, evidence language, useful structure | claims, client marks, testimonials, or proprietary charts |
-| Swiss-inspired information design | alignment, precise dividers, hierarchy | generic corporate template treatment |
+| `--vetta-ink` | `#142238` | Hero, títulos, cierre oscuro |
+| `--vetta-cobalt` | `#2758E9` | CTA, enlaces, indicador activo |
+| `--vetta-paper` | `#F6F3EC` | Fondo editorial cálido |
+| `--vetta-white` | `#FFFFFF` | Áreas de lectura, sobre tinta oscura |
+| `--vetta-mist` | `#EAF0FF` | Fondo de comparaciones y FAQ |
+| `--vetta-slate` | `#35435A` | Cuerpo de texto principal |
+| `--vetta-muted` | `#59677B` | Texto secundario sobre fondos claros |
+| `--vetta-signal` | `#E3A03C` | Acento limitado a fecha, línea o numeración |
 
-## 5. Tokens
+Los contrastes revisados entre combinaciones principales son aproximadamente: blanco/cobalto 5,74:1, papel/tinta 14,4:1, muted/papel 5,19:1, slate/mist 8,76:1. **No usar cobalto como texto pequeño sobre tinta oscura** (contraste insuficiente). Sobre fondo oscuro, usar papel/blanco o signal.
 
-### Color
+**Tipografía:** Manrope para títulos; Inter para lectura, controles y etiquetas. No instalar nuevas fuentes. H1 peso 800; H2 peso 700; cuerpo 400–500; eyebrow 600–700 con tracking moderado. Preferir mayúsculas en etiquetas y CTA, no en párrafos.
 
-| Token | Value | Use | Contrast rule |
-|---|---|---|---|
-| `--ink` | `#111318` | primary text and dark surfaces | body text on Ivory: AAA |
-| `--ivory` | `#F5F2EB` | page background | base surface |
-| `--surface` | `#FCFAF6` | cards and form surfaces | body text on surface: AAA |
-| `--soft-gray` | `#D9D6CF` | rules and quiet structure | never use as text |
-| `--slate` | `#777C80` | secondary text | only at large text or with darker alternative |
-| `--warm` | `#B87950` | marks, rules, decorative accent | not for small text on Ivory |
-| `--warm-text` | `#7C4B31` | accent text, errors requiring warm tone | AA on Ivory |
-| `--moss` | `#294B3A` | success and quiet positive state | AA on Ivory |
-| `--danger` | `#9B3027` | validation errors | AA on Ivory |
-| `--focus` | `#7C4B31` | focus ring | 3px visible ring |
+**Anchos:** shell 1200px máximo, padding desktop 48px, tablet 28px, móvil 20px (320px: 16px). Grid 12 columnas desktop, 4 mobile. Gaps 12, 16, 24, 32, 48, 64px. No gaps vacíos de 160px solo para “aire”.
 
-### Typography
+**Espaciado vertical objetivo:** 88px desktop entre bandas, 56px mobile; ajustar a contenido real. Hero desktop padding top 84px / bottom 92px; mobile top 44px / bottom 48px. La densidad debe ser visualmente deliberada, nunca una columna de textos apretados.
 
-- Display: `Manrope`, fallback `Arial`, `system-ui`; use for the monumental H1 and structured labels.
-- Editorial accent: `Instrument Serif`, fallback `Georgia`, serif; use only for selected words and pull quotes.
-- Body: Manrope/system, 16px minimum, line-height 1.55–1.7.
-- H1: `clamp(3.25rem, 11vw, 9.5rem)`, line-height .86–.94, max measure 8 words per visual block.
-- H2: `clamp(2.4rem, 6vw, 5.5rem)`, line-height .94–1.02.
-- Labels: 11–13px, letter spacing .12em, uppercase only for metadata.
-- Never use small muted text for essential meaning.
+**Botones:** alto mínimo 52px desktop, 50px mobile; padding horizontal 24–30px; radio 12px; fondo azul cobalto, texto blanco; hover con movimiento máximo de 2px y transición 160–220ms. Focus-visible de 3px que contraste con el fondo. Botones blancos sobre fondo oscuro solo en secundarias explícitas, jamás competir con el CTA principal. Todos los CTA del documento editorial conducen a la ruta existente `/registro`.
 
-### Layout
+**Motion:** una entrada sutil por scroll no necesaria para entender contenido, máximo 300ms. Desactivar con `prefers-reduced-motion`. No introducir Framer Motion ni WebGL/Three.js, ni efectos de partículas, parallax costoso, canvas ornamental, carruseles o vídeo autoplay.
 
-- Container: max 1240px; padding 22px mobile, 36px tablet, 52px desktop.
-- Grid: 12 columns desktop; 6 tablet; single-column mobile.
-- Section spacing: 88px mobile, 128px tablet, 168px desktop.
-- Rules: 1px solid `--soft-gray`; avoid boxed card grids unless grouping has a clear task.
-- Radii: 0px for editorial panels, 2px inputs, 999px only for compact status/CTA pills.
-- Shadows: avoid by default; use `0 18px 50px rgba(17,19,24,.08)` only for the registration panel if needed.
-- Breakpoints: 640px, 900px, 1200px.
+**Imágenes:** si se usa la foto de `Team.png`, es la imagen grupal real existente en el proyecto, no una foto de stock. Verificar carga efectiva, permisos y dimensiones. No etiquetar cada rostro por adivinación. Para el regalo, utilizar **captura auténtica** de la herramienta publicada, no mockup inventado. No añadir fotos genéricas de empresarios con maletín ni manos estrechándose.
 
-## 6. Components and states
+## 2. Arquitectura visual exacta
 
-- Header: VETTA wordmark, two anchor links, one CTA; no mega-navigation.
-- Hero: eyebrow, H1, precise copy, session markers, form anchor.
-- Section headings: eyebrow + title + short explanatory paragraph.
-- Session path: paired Tuesday/Thursday blocks joined by the decision line.
-- Matrix preview: real structure from the matrix data model, not a fake screenshot.
-- FAQ: native button/region accordion with keyboard and reduced-motion behavior.
-- Registration: labelled Name, WhatsApp, City, Country, consent checkbox; loading, validation, success, unavailable-cohort, and server-error states.
-- Admin: dense and practical, no decorative dashboard chrome.
+### SECCIÓN 1: cabecera + hero
 
-## 7. Forms and microcopy
+**Fondo:** tinta `#142238`. Una malla de líneas muy tenues en CSS/SVG ligero con opacidad 0.04–0.06 en un extremo; sin degradados de arco iris. Un acento fino de color signal.
 
-- Labels remain visible; placeholders are examples only.
-- Phone input uses country selection and E.164 normalization on the server.
-- Consent for experience communications is required when collecting registration; future marketing is separate and optional.
-- Success copy: `Tu registro está recibido.`
-- Missing operational configuration must say `Configuración TEST pendiente`, never imply confirmed availability.
-- Error messages name the fix and never blame the user.
+**Composición desktop:**
+- Shell 1200px. Nav superior alineado horizontalmente: marca a la izquierda, fecha pequeña y CTA discreto a la derecha. Cabecera no debe dominar el hero.
+- Hero en grid 7/5: columna izquierda 7/12 con eyebrow, H1, subtítulo, párrafo, datos y CTA. Columna derecha 5/12 con **composición tipográfica original** «EL MOMENTO / ANTES DEL SÍ», tres índices apilados `01 DINERO`, `02 TRABAJO`, `03 CLIENTES`, unidos por líneas finas. Esta composición es un recurso visual editorial y NO un formulario ni tres cards.
+- El H1 debe tener jerarquía máxima. Tamaño desktop `clamp(68px, 6.6vw, 104px)`, line-height 0.94–0.99, tracking -0.05em. Un renglón natural para «NO EMPRENDAS» y otro para «TODAVÍA.» cuando el ancho lo permita.
+- H1 en blanco/papel. El acento signal en una línea corta debajo de TODAVÍA, NO en toda la palabra si el contraste cae.
+- Subtitular `clamp(22px,2vw,31px)`, máximo 640px; cuerpo 17–19px, ancho ~600px.
+- Fila de fecha distinguible del párrafo: dos fechas como columnas o `MAR 17` / `JUE 19` con rótulo completo accesible, y hora debajo. No inventar iconos de reloj decorativos cuando el texto es suficiente.
+- CTA principal claramente visible sin que el visitante haga scroll en viewport desktop de 900px cuando sea factible.
 
-## 8. Motion
+**Composición móvil:**
+- Nav compacto con marca y botón de registro accesible, sin romper el ancho.
+- Orden: eyebrow → H1 → subtitular → cuerpo → fecha → CTA → microcopy → composición tipográfica secundaria reducida.
+- H1 `clamp(45px, 12.2vw, 64px)` line-height 0.97. A 320px debe quedar completo sin letras cortadas.
+- La composición tipográfica secundaria no se mostrará por encima del CTA. Evita que el primer CTA quede oculto debajo de una imagen vertical.
+- Sin hero fijo de `100vh` que oculte información crítica.
 
-- Purpose: guide attention between evaluating and deciding, acknowledge state changes, and make the form feel responsive.
-- Allowed properties: `transform`, `opacity`; color changes may be immediate for semantic feedback.
-- Timing: 180ms microinteraction, 360ms reveal, ease-out; no looping decorative animation.
-- Trigger: load/viewport entry and direct interaction; never hide essential copy behind motion.
-- Reduced motion: remove travel, stagger, and scroll-linked effects; preserve content and state feedback.
-- Prohibited: scrolljacking, aggressive parallax, autoplay media, layout animation, or dependency-heavy effects.
+### SECCIÓN 2: identificación
 
-## 9. Responsive and accessibility
+**Fondo:** papel `#F6F3EC`. Eyebrow pequeño a la izquierda, H2 grande a la izquierda y las cuatro situaciones en un listado editorial de dos columnas desktop. Cada situación lleva numeración `01`–`04` con regla horizontal, sin fondos de tarjeta independientes. Móvil: lista de cuatro, una por fila, con padding vertical 16–20px.
 
-- Mobile-first; preserve H1 readability and CTA visibility at 320px, 375px, 390px.
-- Interactive targets aim for 44px; visible focus uses a 3px warm-text ring.
-- Use landmarks, one H1, logical heading order, labelled controls, `aria-live` status, and error association.
-- Check WCAG 2.2 AA contrast for every text pairing; use `--warm-text` instead of `--warm` for small text.
-- Never communicate meaning through color alone.
-- Admin and legal routes are noindex unless explicitly approved.
+**Objetivo:** que la persona diga «esto habla de mi situación» sin leer un bloque de párrafos. No pedir datos ni crear encuesta.
 
-## 10. Voice and prohibited patterns
+### SECCIÓN 3: demostración del método
 
-- Voice: direct, calm, specific, honest about uncertainty.
-- Preferred verbs: evaluar, entender, comparar, decidir, reservar, confirmar.
-- Prohibited claims: guaranteed income, ideal business, scarcity, fake capacity, invented proof, unverified credentials.
-- Prohibited visuals: stock success imagery, cars, money, blue/purple SaaS gradients, generic icon-card grids, chatbots, fake counters.
+**Fondo:** blanco o mist claro. Título a izquierda. Debajo, tres **filas comparativas** de diseño editorial con división vertical: izquierda (frase de venta) en tipografía expresiva y derecha (pregunta crítica) en texto más fuerte, con una línea o indicador que conecta. En mobile, cada fila se apila: etiqueta → frase → pregunta, manteniendo relación visual con borde izquierdo azul. No usar 3 cards idénticas. Remate final en línea grande y breve.
 
-## 11. Approved examples
+**Impacto:** el visitante obtiene valor antes de registrarse y comprende el método.
 
-- Hero: monumental H1 aligned left with an offset decision line and a visible integrated registration panel.
-- Sessions: Tuesday and Thursday as two distinct editorial chapters joined by one line, not a calendar widget.
-- Matrix: actual criteria labels and blank evaluation cells, with no invented scores.
+### SECCIÓN 4: agenda
 
-## 12. Decisions pending
+**Fondo:** tinta oscuro intercalada para romper monotonía, con encabezados claros. Dos planos editoriales numerados `01` y `02` distribuidos lado a lado en desktop y apilados en móvil. Separarlos con una regla delgada y gran numeración semitransparente, NO cajas bordadas de mismo tamaño. Fecha en signal, títulos blancos; bullets de longitud controlada. CTA debajo.
 
-- [ ] Confirm first cohort dates, times, duration, and timezone owner.
-- [ ] Confirm official WhatsApp number, group link, and meeting URLs.
-- [ ] Confirm host identity, photo, and biography.
-- [ ] Approve legal identity, privacy notice, terms, and retention period.
-- [ ] Decide whether to self-host Manrope and Instrument Serif before production.
-- [ ] Approve analytics destination and consent policy.
+**Diferenciación:** primer encuentro = comprender los modelos; segundo = aplicar criterios y conocer una alternativa empresarial. No ocultar este segundo propósito.
 
-## 13. Current approved direction — Dark premium technology
+### SECCIÓN 5: regalo
 
-This section supersedes the v1 editorial direction for the public landing. The previous decisions remain in this file as history and continue to govern `/matriz`, legal pages, and operational surfaces until explicitly updated.
+**Fondo:** papel cálido. Diseño 6/6 desktop: izquierda editorial con 3 beneficios y CTA, derecha una **captura real** del universo o misión de la herramienta, en una composición de dispositivo sobria (sin falsas interfaces). Debe verse como producto útil. En móvil, copia primero y captura real después; controlar peso de la captura y lazy loading si está fuera del viewport.
 
-### Visual thesis
+**No decir que el regalo es un PDF.** Es una herramienta interactiva que permite obtener una misión.
 
-VETTA presents a calm, high-precision decision environment: a dark product interface that lets a visitor experience the act of evaluating an opportunity before asking them to register. The signature move is the interactive opportunity evaluator in the hero, not decorative geometry.
+### SECCIÓN 6: equipo + inscripción en tres pasos
 
-### Tokens
+**Fondo:** blanco. Fotografía del equipo en banda horizontal grande de relación aproximada 16:9 o 2:1 según recorte real. Integrar la imagen con una máscara sutil y borde editorial; no meterla como cuadrado pequeño aislado. Al lado o debajo, los cuatro nombres alineados como créditos, sin etiquetar rostros por posición. Añadir una breve explicación colectiva; no inventar biografías.
 
-| Token | Value | Use |
-|---|---|---|
-| `--vt-bg` | `#080B12` | page background |
-| `--vt-surface` | `#121824` | raised sections and panels |
-| `--vt-surface-2` | `#1A2230` | controls and form fields |
-| `--vt-ink` | `#F8FAFC` | primary text |
-| `--vt-muted` | `#A6B2C3` | secondary text and supporting copy |
-| `--vt-accent` | `#5271FF` | primary CTA and active states |
-| `--vt-cyan` | `#75D8E7` | emphasis, focus, status and progression |
+**Después de la foto:** la explicación del proceso en una sola franja horizontal «01 Datos / 02 Envía código / 03 Grupo»; mobile en lista compacta. No crear otra sección de 900px de alto. Es un recordatorio del siguiente paso, no un nuevo embudo.
 
-### Typography
+### SECCIÓN 7: FAQ
 
-- Geist Sans is the only interface and display family.
-- Geist Mono is reserved for compact technical labels and status metadata.
-- No Instrument Serif, cursive display type, or decorative italic treatment.
-- Hero display range: `clamp(3.45rem, 7.5vw, 7.3rem)` desktop and `clamp(3.45rem, 16vw, 5.4rem)` mobile.
+**Fondo:** mist `#EAF0FF`. Título y acordeón de 8 preguntas exactas de `01_COPY_APROBADO.md`. Una columna de lectura de ancho máximo 860px, sin iconografía infantil. `details/summary` accesible, foco visible, bordes ligeros, tamaño táctil adecuado.
 
-### Layout and components
+### SECCIÓN 8: cierre + footer
 
-- Maximum content width: 1240px; desktop hero uses a 52/48 two-column grid.
-- Mobile is intentionally recomposed into a short readable hero followed by the evaluator.
-- The evaluator uses native tab buttons, local-only state, no score, no personal data, and no lead qualification.
-- The matrix preview uses the same criteria and questions as `/matriz`; it is not a fabricated dashboard.
-- The registration panel renders only when a configured open cohort and persistence-ready path exist. Otherwise it shows `Próxima edición en preparación.` without a false action.
+**Fondo cierre:** tinta `#142238`, H2 claro, acento signal mínimo, CTA azul sobre panel claro o botón blanco sobre fondo oscuro según contraste y jerarquía. Evitar repetir decoraciones del hero. Cierre con gran texto alineado a la izquierda, no un enorme espacio vacío con CTA perdido.
 
-### Motion
+**Footer:** fondo y contenido con contraste AA. Etiquetas legales según copy; no reescribir contenidos jurídicos.
 
-- Page entry and evaluator panel changes use opacity and transform only.
-- Selection feedback is immediate in state and transitions over 220–300ms.
-- No looping ambient animation, scrolljacking, parallax, or layout animation.
-- `prefers-reduced-motion` removes travel and panel animation while preserving all content and state feedback.
-## 14. Current public sales landing — approved execution direction
+## 3. Registro y confirmación
 
-The public landing at `/` uses the approved `NO EMPRENDAS TODAVÍA.` sales direction. VETTA is an internal project name and must not appear in public landing copy, metadata or shareable content.
+**Registro:** misma paleta, tipos y CTA. Fondo papel, formulario sobre superficie blanca de máximo 620px. Diseño limpio sin botón marrón o cuadrado. En desktop puede incluir un panel lateral de resumen del evento (fecha/hora/dos sesiones) con texto del COPY; en móvil el resumen arriba, formulario inmediatamente después. No modificar campos ni schema. Labels de 16px mínimo, ayuda 14px legible, mensajes error en español en línea bajo el campo. No depender del popup HTML nativo inglés como único feedback; usar validación accesible y localizar la experiencia.
 
-### Concrete visual system
+**Confirmación:** mismo lenguaje visual, pero encabezado «¡YA ESTÁS CASI ADENTRO!» ocupa el foco. Código único muy visible y copiable si función existente; CTA WhatsApp dominante; CTA grupo secundario, claramente separado; bloque del regalo como incentivo. En móvil la persona debe ver título, código y botón de WhatsApp sin desplazarse por contenido superfluo. No activar pasos ni cambiar estado por el solo clic.
 
-- Background: `#F5F6F8`; white surfaces: `#FFFFFF`; ink: `#142238`; body text: `#35435A`; secondary text: `#617086`; action blue: `#2758E9`; hover: `#1746CD`; soft blue: `#EAF0FF`; gift dark: `#142238`; gift accent: `#F5C879`; border: `#E2E7EF`.
-- Manrope is used for headings, CTAs and labels. Inter is used for paragraphs and form copy. No serif or decorative italic type.
-- Rounded corners are 12–18px. Interactive controls are at least 54px high. Shadows are broad, soft and restrained.
-- Desktop uses a 1200px content shell and a 52/48 hero split. Mobile is designed at 390px and 360px first, with the CTA inside the first viewport.
+**Alineación:** `/`, `/registro` y `/confirmacion` deben sentirse de la misma marca. No crear subpáginas “de plantilla” con otra tipografía o distinto azul.
 
-### Commercial architecture
+## 4. Comportamiento por viewport
 
-The landing has exactly four commercial zones: hero, identification, the two-session masterclass, and the gift/closing. It contains no form. Every CTA points to `/registro`; `/registro` blocks honestly while the cohort is not open. `/confirmacion` is only unlocked after a successful persisted registration in the browser session.
+| Vista | Requisito visual verificable |
+|---|---|
+| 320px | H1 completo y legible, sin scroll horizontal, CTA íntegro, fecha visible sin recorte |
+| 375/390px | CTA del hero anterior a la ilustración secundaria, cards editoriales apiladas, formulario usable con teclado |
+| 430px | Espaciado proporcionado; evitar una columna diminuta centrada con mucho margen |
+| 768px | Hero refluye sin columnas demasiado estrechas; equipo y regalo mantienen proporciones |
+| 1024px | Hero de dos columnas si caben; ningún titular se monta sobre el visual |
+| 1440px | Composición editorial amplia, ritmo entre secciones, foto del equipo integrada y cierre fuerte |
 
-### Visual assets and motion
+## 5. Rendimiento y recursos
 
-The hero uses the original editorial photograph documented in `VETTA-IMAGE-SOURCES.md`. The gift uses a real-criteria HTML rendering of `/matriz` over an original tablet backdrop. Motion is limited to opacity/transform reveals, CTA feedback and sticky CTA visibility; content remains readable without animation and all transitions are disabled under `prefers-reduced-motion`.
+- Localizar el recurso LCP real con Lighthouse/Performance: NO asumir que es la imagen del hero.
+- Evitar CSS `background-image` pesado como LCP si puede reemplazarse por un recurso optimizado o composición tipográfica.
+- Usar `next/image` con tamaños y `sizes` adecuados donde aplique; prioridad alta **solo** para la imagen que realmente sea LCP; lazy para inferiores.
+- No precargar `Team.png` si está debajo del hero.
+- Evitar bundles adicionales y eliminar CSS/JS no usado solo si no compromete otros componentes.
+- Objetivo móvil: LCP de laboratorio ≤2,5 s si técnicamente alcanzable en configuración comparable; documentar métrica real si no se alcanza. Mantener CLS ≤0,1 y rendimiento sin JS innecesario.
+- No alterar contenido/servicios de backend para mejorar métrica Lighthouse.
 
-### Rejected history
+## 6. Regla anti-mediocridad
 
-The former beige/terracotta editorial system, dark-tech prototype, and concept A/B pages remain historical or temporary references only. They are not to be reused for the public landing without explicit approval.
+Cada sección debe aportar una evidencia, una decisión o un motivo para seguir: reconocimiento, pregunta real, agenda, herramienta, personas, logística, FAQ. No añadir logotipos ficticios, porcentajes, contadores, sellos, carruseles, testimonios inventados ni CTAs decorativos. La página debe ser memorable por composición y claridad, no por recargar efectos.
