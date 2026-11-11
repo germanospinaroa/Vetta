@@ -47,10 +47,10 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     const payload = Object.fromEntries(form.entries());
     const localErrors: Record<string, string> = {};
     if (!String(payload.name || "").trim()) localErrors.name = "Escribe tu nombre.";
-    if (!String(payload.country || "").trim()) localErrors.country = "Selecciona el país de tu número.";
-    if (!String(payload.whatsapp || "").trim()) localErrors.whatsapp = "Revisa el número de WhatsApp.";
+    if (!String(payload.country || "").trim()) localErrors.country = "Selecciona el país.";
+    if (!String(payload.whatsapp || "").trim()) localErrors.whatsapp = "Revisa tu número de WhatsApp.";
     if (!String(payload.city || "").trim()) localErrors.city = "Escribe tu ciudad.";
-    if (payload.consent !== "on") localErrors.consent = "Acepta las condiciones para continuar.";
+    if (payload.consent !== "on") localErrors.consent = "Acepta el tratamiento de datos para continuar.";
     if (Object.keys(localErrors).length) { setErrors(localErrors); setState("error"); setResult({ ok: false, message: "Revisa los campos marcados." }); return; }
     const queryAttribution = readAttribution(window.location.search);
     let storedAttribution: Record<string, string> = {};
@@ -73,7 +73,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
       if (!response.ok || !data.ok) {
         setState("error");
         trackClarityEvent("registration_error");
-        setResult({ ok: false, message: data.ok ? "No pudimos guardar tu inscripción. Inténtalo de nuevo." : data.message });
+        setResult({ ok: false, message: data.ok ? "No pudimos completar el registro. Vuelve a intentarlo." : data.message });
         void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: data.ok ? "unknown" : data.code || "request_failed" } }) });
         return;
       }
@@ -94,7 +94,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     } catch {
       setState("error");
       trackClarityEvent("registration_error");
-      setResult({ ok: false, message: "No pudimos guardar tu inscripción. Inténtalo de nuevo." });
+      setResult({ ok: false, message: "No pudimos completar el registro. Vuelve a intentarlo." });
       void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: "network_error" } }) });
     }
   }

@@ -7,8 +7,8 @@ import { hasValidQaSession, qaSessionCookieName } from "@/lib/qa-session";
 
 const siteUrl = "https://noemprendas.gritlab.pro";
 const ogImage = `${siteUrl}/og-no-emprendas.png`;
-const ogTitle = "NO EMPRENDAS TODAVÍA | Masterclass gratis 17 y 19 de noviembre";
-const ogDescription = "Dos encuentros gratuitos para comparar formas de emprender, entender qué exigen y aprender qué comprobar antes de decidir. 17 y 19 de noviembre, 8 p. m. Colombia.";
+const ogTitle = "NO EMPRENDAS TODAVÍA. | MASTERCLASS GRATIS · EN VIVO";
+const ogDescription = "¿Buscas ingresos adicionales o estás pensando en empezar tu propio negocio? 17 y 19 de noviembre, 8:00 p. m. Colombia.";
 
 export const metadata: Metadata = {
   title: ogTitle,
