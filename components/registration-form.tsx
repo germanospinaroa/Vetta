@@ -46,12 +46,12 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     const form = new FormData(event.currentTarget);
     const payload = Object.fromEntries(form.entries());
     const localErrors: Record<string, string> = {};
-    if (!String(payload.name || "").trim()) localErrors.name = "Escribe tu nombre para continuar.";
+    if (!String(payload.name || "").trim()) localErrors.name = "Escribe tu nombre.";
     if (!String(payload.country || "").trim()) localErrors.country = "Selecciona el país de tu número.";
-    if (!String(payload.whatsapp || "").trim()) localErrors.whatsapp = "Revisa el número de WhatsApp e inténtalo de nuevo.";
-    if (!String(payload.city || "").trim()) localErrors.city = "Escribe tu ciudad para continuar.";
-    if (payload.consent !== "on") localErrors.consent = "Necesitamos que revises y aceptes las condiciones para continuar.";
-    if (Object.keys(localErrors).length) { setErrors(localErrors); setState("error"); setResult({ ok: false, message: "Revisa los campos marcados para continuar." }); return; }
+    if (!String(payload.whatsapp || "").trim()) localErrors.whatsapp = "Revisa el número de WhatsApp.";
+    if (!String(payload.city || "").trim()) localErrors.city = "Escribe tu ciudad.";
+    if (payload.consent !== "on") localErrors.consent = "Acepta las condiciones para continuar.";
+    if (Object.keys(localErrors).length) { setErrors(localErrors); setState("error"); setResult({ ok: false, message: "Revisa los campos marcados." }); return; }
     const queryAttribution = readAttribution(window.location.search);
     let storedAttribution: Record<string, string> = {};
     try {
@@ -73,7 +73,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
       if (!response.ok || !data.ok) {
         setState("error");
         trackClarityEvent("registration_error");
-        setResult({ ok: false, message: data.ok ? "No pudimos completar el registro." : data.message });
+        setResult({ ok: false, message: data.ok ? "No pudimos guardar tu inscripción. Inténtalo de nuevo." : data.message });
         void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: data.ok ? "unknown" : data.code || "request_failed" } }) });
         return;
       }
@@ -94,7 +94,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     } catch {
       setState("error");
       trackClarityEvent("registration_error");
-      setResult({ ok: false, message: "No pudimos conectar con el registro. Revisa tu conexión e inténtalo de nuevo." });
+      setResult({ ok: false, message: "No pudimos guardar tu inscripción. Inténtalo de nuevo." });
       void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "registration_failed", properties: { code: "network_error" } }) });
     }
   }
@@ -128,8 +128,8 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         <div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" placeholder="Tu ciudad" aria-describedby={errors.city ? "city-error" : undefined} />{errors.city && <small className="field-error" id="city-error">{errors.city}</small>}</div>
         <label className="consent"><input type="checkbox" name="consent" aria-describedby={errors.consent ? "consent-error" : undefined} /><span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso de privacidad</a>.</span></label>{errors.consent && <small className="field-error" id="consent-error">{errors.consent}</small>}
         {state === "error" && <p className="form-error" role="alert">{result && !result.ok ? result.message : "Revisa los campos y vuelve a intentarlo."}</p>}
-        <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Guardando tu inscripción…" : "RESERVAR MI LUGAR Y CONTINUAR"}<span aria-hidden="true">→</span></button>
-        <p className="form-footnote">En el siguiente paso confirmarás tu inscripción por WhatsApp y podrás entrar al grupo.</p>
+        <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Guardando tu inscripción…" : "RESERVAR MI LUGAR GRATIS"}<span aria-hidden="true">→</span></button>
+        <p className="form-footnote">Siguiente paso: enviar tu código por WhatsApp para recibir el enlace del grupo.</p>
       </div>
     </form>
   );
