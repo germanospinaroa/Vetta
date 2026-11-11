@@ -14,6 +14,10 @@
 - Run lint, typecheck, tests, build, and relevant browser checks before claiming completion.
 - Do not publish or deploy without explicit authorization.
 
+## Web excellence gate
+
+All future public web changes must use the verified skills in `skills/conversion-landing`, `skills/visual-qa`, and `skills/product-facts-guard`, together with the applicable global web, UI/UX, React and architecture skills. Before delivery, run the product-facts review, responsive browser review at 320/375/390/430/768/1024/1440 where practical, keyboard/focus and reduced-motion checks, lint, typecheck, tests, build, link checks and `git diff --check`. Keep the approved commercial facts and funnel in `PRODUCT_CONTEXT.md`, `DESIGN.md` and `COPY_APPROVED.md` as the source of truth.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

@@ -1,5 +1,16 @@
 # VETTA — DESIGN.md
 
+## Current public landing system — premium editorial reconstruction
+
+The current public landing is a restrained cinematic editorial system for NO EMPRENDAS TODAVÍA., not SAVORA and not a generic SaaS template. It uses the existing photography, a cool mineral background, midnight ink, signal blue and a controlled gold accent for the gift. The narrative has five clear movements: immediate promise, better questions, two-session experience, WhatsApp-delivered gift, and decisive closing CTA.
+
+- Display/UI: Manrope and Inter already loaded by Next font; no new dependency.
+- Layout: 1200px shell, 52/48 hero composition, large editorial section headings, asymmetric value rows, two-session split, dark gift chapter, FAQ disclosure and strong closing panel.
+- Components: `SalesLanding`, `SalesCta`, `StickySalesCta`, existing registration form and existing confirmation page. The public landing has no form; all registration CTAs go to `/registro`.
+- Motion: only opacity/transform and native details disclosure; no scrolljacking, autoplay, parallax or invented interactions. Reduced motion removes transitions.
+- Responsive contract: mobile-first reflow; hero CTA stays in the first view; session columns stack; FAQ remains keyboard accessible; controls target at least 44px.
+- Content contract: use `COPY_APPROVED.md` and `PRODUCT_CONTEXT.md`; never invent proof, scarcity, financial outcomes, hosts or operational URLs.
+
 This file is the visual authority for VETTA v1. Other skills may suggest improvements, but may not override these decisions without an explicit project decision.
 
 ## 1. Brand personality

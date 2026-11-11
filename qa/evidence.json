@@ -1,0 +1,19 @@
+{
+  "route": "/",
+  "preview": "https://vetta-mne3km2ae-germans-projects-baef13ff.vercel.app",
+  "viewports": [320, 375, 390, 430, 768, 1024, 1440],
+  "checks": {
+    "hero": "reviewed",
+    "responsive_reflow": "reviewed",
+    "primary_cta": "reviewed",
+    "registration_route": "preserved",
+    "reduced_motion": "css rule present",
+    "keyboard_faq": "native details and visible focus",
+    "operational_flow": "unchanged"
+  },
+  "evidence_files": "evidence/qa-rebuild/home-*-qa.png",
+  "limitations": [
+    "Preview environment does not exercise a real registration or WhatsApp send; no real messages were sent.",
+    "The preview screenshot uses the production cohort configuration only for public date/status rendering; it does not mutate Supabase."
+  ]
+}
