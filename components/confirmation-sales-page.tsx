@@ -1,14 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
-import { trackClarityEvent, trackMetaWhatsAppClick } from "@/lib/analytics";
+import { trackClarityEvent, trackMetaAssessmentStarted, trackMetaWhatsAppClick } from "@/lib/analytics";
 
-type Props = { confirmed: boolean; firstName?: string; registrationCode?: string; whatsappHref?: string; groupInvitationHref?: string; tuesdayLabel?: string; thursdayLabel?: string };
+type Props = { confirmed: boolean; registrationCode?: string; whatsappHref?: string };
 
-export function ConfirmationSalesPage({ confirmed, registrationCode, whatsappHref, groupInvitationHref }: Props) {
+export function ConfirmationSalesPage({ confirmed, registrationCode, whatsappHref }: Props) {
   useEffect(() => { if (confirmed) trackClarityEvent("registration_confirmed"); }, [confirmed]);
-  function recordWhatsAppClick() { trackMetaWhatsAppClick(); trackClarityEvent("whatsapp_clicked"); void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "whatsapp_clicked", registrationCode, properties: { destination: "commercial_whatsapp" } }) }); }
-  function recordGroupClick() { void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "whatsapp_clicked", registrationCode, properties: { destination: "group_invitation" } }) }); }
-  return <main className="v6-page v6-confirmation-page"><a className="v6-skip" href="#confirmation-main">Saltar al contenido</a><header className="v6-header"><div className="v6-shell v6-header-inner"><Link href="/" className="v6-brand"><span className="v6-brand-full">NO EMPRENDAS TODAVÍA.</span><span className="v6-brand-short" aria-hidden="true">NO EMPRENDAS</span></Link><span className="v6-header-date">17 Y 19 DE NOVIEMBRE · 8:00 P. M. · COLOMBIA</span></div></header><div className="v6-confirmation-shell" id="confirmation-main">{confirmed ? <section className="v6-confirmation-card" data-clarity-mask="true"><h1>¡YA ESTÁS CASI ADENTRO!</h1><p className="v6-confirmation-lead">Tu registro está guardado. Solo falta enviar tu código por WhatsApp para recibir el enlace del grupo y tu regalo.</p><div className="v6-code"><span>TU CÓDIGO PERSONAL</span><strong>{registrationCode}</strong></div>{whatsappHref ? <a className="v6-button v6-whatsapp" href={whatsappHref} target="_blank" rel="noreferrer" onClick={recordWhatsAppClick}>ENVIAR MI CÓDIGO POR WHATSAPP <span aria-hidden="true">→</span></a> : <p className="v6-status">No podemos preparar el mensaje porque falta el número comercial de WhatsApp.</p>}<p className="v6-confirmation-note">Cuando WhatsApp se abra, pulsa Enviar. Abrir el chat no completa la confirmación.</p><div className="v6-separator">DESPUÉS, ENTRA AL GRUPO</div><p className="v6-group-copy">Ahí compartiremos los avisos y las instrucciones para las dos sesiones.</p>{groupInvitationHref ? <a className="v6-button v6-group-button" href={groupInvitationHref} target="_blank" rel="noreferrer" onClick={recordGroupClick}>ENTRAR AL GRUPO PRIVADO <span aria-hidden="true">→</span></a> : <p className="v6-status">El enlace del grupo no está disponible temporalmente.</p>}<p className="v6-final-note">Tu regalo TU PRÓXIMO MOVIMIENTO llegará por este mismo chat después de enviar tu código.</p></section> : <section className="v6-confirmation-card"><h1>Esta página se abre después de confirmar tu registro.</h1><p className="v6-confirmation-lead">Vuelve a la página de registro y completa el proceso para recibir las instrucciones correctas.</p><Link className="v6-button" href="/registro">VOLVER AL REGISTRO <span aria-hidden="true">→</span></Link></section>}</div></main>;
+
+  function recordWhatsAppClick() {
+    trackMetaWhatsAppClick();
+    trackMetaAssessmentStarted(registrationCode || "");
+    trackClarityEvent("whatsapp_clicked");
+    if (!registrationCode) return;
+    const dbDedupeKey = `vetta-assessment-event:${registrationCode}`;
+    if (window.localStorage.getItem(dbDedupeKey) === "sent") return;
+    const event = { name: "assessment_started", registrationCode, properties: { destination: "commercial_whatsapp" } };
+    const body = JSON.stringify(event);
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon("/api/events", new Blob([body], { type: "application/json" }));
+    } else {
+      void fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true });
+    }
+    window.localStorage.setItem(dbDedupeKey, "sent");
+  }
+
+  return <main className="v7-confirmation-page"><a className="v7-confirmation-skip" href="#confirmation-main">Saltar al contenido</a><div className="v7-confirmation-shell" id="confirmation-main">{confirmed ? <section className="v7-confirmation-card" data-clarity-mask="true" aria-labelledby="confirmation-title"><div className="v7-confirmation-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m6 12.5 4 4L18.5 8" /></svg></div><p className="v7-confirmation-eyebrow">VETTA · MASTERCLASS EN VIVO</p><h1 id="confirmation-title">¡Ya estás casi dentro!</h1><p className="v7-confirmation-lead">Tu registro quedó guardado. Solo falta un último paso para confirmar tu participación.</p><div className="v7-confirmation-action"><h2>Confirma tu lugar por WhatsApp</h2><p>Al enviar el mensaje, recibirás las instrucciones para unirte al grupo privado, donde compartiremos los accesos a las sesiones y el regalo que preparamos para ti.</p>{whatsappHref ? <a className="v7-confirmation-button" href={whatsappHref} target="_blank" rel="noreferrer" onClick={recordWhatsAppClick}>CONFIRMAR MI PARTICIPACIÓN <span aria-hidden="true">→</span></a> : <p className="v7-confirmation-status" role="status">No podemos preparar el mensaje porque falta el número comercial de WhatsApp.</p>}<p className="v7-confirmation-note">Se abrirá WhatsApp con tu mensaje listo. Solo debes pulsar Enviar.</p></div></section> : <section className="v7-confirmation-card v7-confirmation-invalid" aria-labelledby="confirmation-title"><p className="v7-confirmation-eyebrow">VETTA · MASTERCLASS EN VIVO</p><h1 id="confirmation-title">Esta página se abre después de confirmar tu registro.</h1><p className="v7-confirmation-lead">Vuelve a la página de registro y completa el proceso para recibir las instrucciones correctas.</p></section>}</div></main>;
 }

@@ -37,6 +37,7 @@ export const eventSchema = z.object({
     "registration_submitted",
     "registration_failed",
     "whatsapp_clicked",
+    "assessment_started",
     "matrix_opened",
     "conversation_confirmed",
     "group_join_declared",

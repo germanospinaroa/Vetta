@@ -115,6 +115,15 @@ export function trackMetaWhatsAppClick() {
   return true;
 }
 
+export function trackMetaAssessmentStarted(registrationCode: string) {
+  if (!advertisingConsentGranted() || typeof window === "undefined" || !registrationCode) return false;
+  const dedupeKey = `vetta-meta-assessment-started:${registrationCode}`;
+  if (window.localStorage.getItem(dedupeKey) === "sent") return false;
+  ensureMetaQueue()?.("trackCustom", "AssessmentStarted", { content_name: "NO EMPRENDAS TODAVÍA." }, { eventID: dedupeKey });
+  window.localStorage.setItem(dedupeKey, "sent");
+  return true;
+}
+
 export function queueMetaLeadUntilConsent(registrationCode: string, eventId?: string) {
   if (typeof window === "undefined" || !registrationCode || !advertisingConsentUndecided()) return;
   window.sessionStorage.setItem(PENDING_META_LEAD_KEY, JSON.stringify({ registrationCode, eventId: eventId || null }));
