@@ -11,6 +11,10 @@ export function AnalyticsConsent() {
   useEffect(() => {
     const open = () => { setAnalytics(analyticsConsentGranted()); setAdvertising(advertisingConsentGranted()); setVisible(true); };
     window.addEventListener("vetta:open-privacy-preferences", open);
+    // The consent UI used to stay hidden until a footer click, so most first-time
+    // visitors could never opt in to the configured conversion pixel.
+    if (window.localStorage.getItem(ANALYTICS_CONSENT_KEY) === null ||
+        window.localStorage.getItem(ADVERTISING_CONSENT_KEY) === null) open();
     return () => window.removeEventListener("vetta:open-privacy-preferences", open);
   }, []);
 
