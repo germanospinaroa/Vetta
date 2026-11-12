@@ -6,6 +6,7 @@ import "./sales-v2.css";
 import "./sales-v4.css";
 import "./sales-v5.css";
 import "./sales-v6.css";
+import "./sales-v7.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://noemprendas.gritlab.pro";
 
