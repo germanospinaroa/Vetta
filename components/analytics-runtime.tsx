@@ -23,10 +23,12 @@ export function AnalyticsRuntime() {
   useEffect(() => {
     if (!advertisingEnabled || !metaPixelReady || !publicRoute) return;
     const path = pathname;
+    // Flush a conversion queued before advertising consent, even if the user
+    // grants consent without navigating to a new page.
+    flushPendingMetaLead();
     if (!shouldTrackPageView(path, pagePath.current)) return;
     pagePath.current = path;
     trackMetaPageView();
-    flushPendingMetaLead();
   }, [advertisingEnabled, metaPixelReady, pathname, publicRoute]);
 
   function handleMetaPixelReady() {
