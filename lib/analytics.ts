@@ -103,23 +103,12 @@ export function trackMetaPageView() {
 export function trackNewMetaLead(registrationCode: string, eventId?: string) {
   if (!advertisingConsentGranted() || typeof window === "undefined" || !registrationCode) return false;
   const dedupeKey = `vetta-meta-lead:${registrationCode}`;
-  const assessmentKey = `vetta-meta-assessment-started:${registrationCode}`;
   const id = eventId || dedupeKey;
   const fbq = ensureMetaQueue();
-  let sent = false;
-  if (window.localStorage.getItem(dedupeKey) !== "sent") {
-    fbq?.("track", "Lead", { content_name: "NO EMPRENDAS TODAVÍA." }, { eventID: id });
-    window.localStorage.setItem(dedupeKey, "sent");
-    sent = true;
-  }
-  // AssessmentStarted is the selected Meta Ads conversion. Fire only after a
-  // newly persisted LIVE registration, never on modal open or form focus.
-  if (window.localStorage.getItem(assessmentKey) !== "sent") {
-    fbq?.("trackCustom", "AssessmentStarted", { content_name: "NO EMPRENDAS TODAVÍA.", registration_status: "saved" }, { eventID: id });
-    window.localStorage.setItem(assessmentKey, "sent");
-    sent = true;
-  }
-  return sent;
+  if (window.localStorage.getItem(dedupeKey) === "sent") return false;
+  fbq?.("track", "Lead", { content_name: "NO EMPRENDAS TODAVÍA." }, { eventID: id });
+  window.localStorage.setItem(dedupeKey, "sent");
+  return true;
 }
 
 export function trackMetaWhatsAppClick() {
