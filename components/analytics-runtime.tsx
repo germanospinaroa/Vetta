@@ -39,7 +39,7 @@ export function AnalyticsRuntime() {
   if (!publicRoute) return null;
   return <>
     <Script id="vetta-meta-pixel-bootstrap" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version="2.0";n.queue=[]}(window,document,"script","https://connect.facebook.net/en_US/fbevents.js");`}</Script>
-    {/* Pixel bootstrap exists automatically; Meta network script loads after acceptance. */}
+    {/* The visitor can disable Meta measurement using the privacy preferences link. */}
     {advertisingEnabled && (
       <Script id="vetta-meta-pixel" src="https://connect.facebook.net/en_US/fbevents.js" strategy="afterInteractive" onReady={handleMetaPixelReady} />
     )}
