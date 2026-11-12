@@ -64,7 +64,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid"]) payload[key] = queryAttribution[key as keyof typeof queryAttribution] || storedAttribution[key] || "";
     payload.fbp = metaAttribution.fbp || storedAttribution.fbp || "";
     payload.fbc = metaAttribution.fbc || storedAttribution.fbc || "";
-    payload.advertisingConsent = advertisingConsentGranted() ? "granted" : "denied";
+    payload.advertisingConsent = window.localStorage.getItem("vetta-advertising-consent-v1") === "granted" ? "granted" : "denied";
     payload.consentVersion = "v1";
 
     try {
