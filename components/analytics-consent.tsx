@@ -11,6 +11,10 @@ export function AnalyticsConsent() {
   useEffect(() => {
     const open = () => { setAnalytics(analyticsConsentGranted()); setAdvertising(advertisingConsentGranted()); setVisible(true); };
     window.addEventListener("vetta:open-privacy-preferences", open);
+    // The consent UI used to stay hidden until a footer click, so most first-time
+    // visitors could never opt in to the configured conversion pixel.
+    if (window.localStorage.getItem(ANALYTICS_CONSENT_KEY) === null ||
+        window.localStorage.getItem(ADVERTISING_CONSENT_KEY) === null) open();
     return () => window.removeEventListener("vetta:open-privacy-preferences", open);
   }, []);
 
@@ -22,9 +26,8 @@ export function AnalyticsConsent() {
     window.dispatchEvent(new CustomEvent("vetta:analytics-consent", { detail: { analytics: nextAnalytics, advertising: nextAdvertising } }));
     setVisible(false);
   }
-  return <aside className="analytics-consent" aria-label="Preferencias de privacidad">
-    <h2>Tu privacidad importa</h2>
-    <p>Usamos herramientas de medición para mejorar esta página. Tú decides si <strong>aceptas</strong> o rechazas. ¡Y claro que agradecemos que aceptes!</p>
+  return <aside className="analytics-consent analytics-consent-compact" aria-label="Preferencias de privacidad">
+    <p>¿Nos permites medir visitas e inscripciones para mejorar esta masterclass? <a href="/privacidad">Privacidad</a>.</p>
     <div className="analytics-consent-actions">
       <button type="button" className="analytics-consent-reject" onClick={() => savePreferences(false, false)}>Rechazar</button>
       <button type="button" className="analytics-consent-accept" onClick={() => savePreferences(true, true)}>Aceptar</button>
