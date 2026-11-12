@@ -105,3 +105,11 @@
 @media(max-width:640px){.filter-v2-intro,.filter-v2-question,.filter-v3-results{width:100%;min-width:0}.filter-v2-intro>*:not(.filter-v2-orb),.filter-v2-question>*{max-width:100%;min-width:0}.filter-v2-intro h2,.filter-v2-question h2,.filter-v3-diagnosis h2{overflow-wrap:anywhere;word-break:normal}}
 @media print{.filter-v3-results{box-shadow:none;border:0;padding:0}.filter-v3-block{break-inside:avoid}.filter-v3-diagnosis{background:#fff;color:#142238}.filter-v3-diagnosis h2,.filter-v3-principal strong{color:#142238}.filter-v3-synthesis,.filter-v3-principal small{color:#33465a}.filter-v3-decision{background:#fff}}
 @media(max-width:640px){.next-move-mobile-fit{font-size:clamp(2.35rem,12vw,4.6rem)!important;max-width:100%!important}.next-move-mobile-fit i{display:block}}
+
+/* Compact, non-modal consent choice: does not block the hero or the CTA. */
+.analytics-consent.analytics-consent-compact{position:fixed;left:50%;right:auto;bottom:12px;transform:translateX(-50%);z-index:50;width:min(780px,calc(100% - 24px));padding:10px 14px;display:flex;align-items:center;gap:14px;border-radius:12px;box-shadow:0 5px 24px rgba(20,34,56,.18);font-size:12px;line-height:1.35}
+.analytics-consent-compact p{margin:0;flex:1}
+.analytics-consent-compact a{color:#2758e9;text-decoration:underline}
+.analytics-consent-compact .analytics-consent-actions{margin:0;flex:0 0 auto;gap:8px}
+.analytics-consent-compact .analytics-consent-actions button{min-height:36px;padding:6px 12px;font-size:12px;white-space:nowrap}
+@media(max-width:570px){.analytics-consent.analytics-consent-compact{bottom:6px;gap:9px;padding:10px 12px;flex-direction:column;align-items:stretch}.analytics-consent-compact .analytics-consent-actions{justify-content:flex-end}}
