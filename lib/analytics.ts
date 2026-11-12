@@ -40,7 +40,7 @@ export function analyticsConsentGranted() {
 }
 
 export function advertisingConsentGranted() {
-  return typeof window !== "undefined" && window.localStorage.getItem(ADVERTISING_CONSENT_KEY) === "granted";
+  return typeof window !== "undefined" && window.localStorage.getItem(ADVERTISING_CONSENT_KEY) !== "denied";
 }
 
 export function advertisingConsentUndecided() {
