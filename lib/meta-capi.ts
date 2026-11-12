@@ -27,7 +27,18 @@ export async function sendMetaLeadServerEvent(event: MetaLeadServerEvent): Promi
     const response = await fetch(`https://graph.facebook.com/${encodeURIComponent(config.version)}/${encodeURIComponent(config.pixelId)}/events`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ data: [{ event_name: "Lead", event_time: Math.floor(event.eventTime.getTime() / 1000), event_id: event.eventId, action_source: "website", event_source_url: event.sourceUrl, user_data: userData }] , access_token: config.token }),
+      body: JSON.stringify({
+        data: ["Lead", "AssessmentStarted"].map((name) => ({
+          event_name: name,
+          event_time: Math.floor(event.eventTime.getTime() / 1000),
+          event_id: event.eventId,
+          action_source: "website",
+          event_source_url: event.sourceUrl,
+          user_data: userData,
+          ...(name === "AssessmentStarted" ? { custom_data: { content_name: "NO EMPRENDAS TODAVÍA.", registration_status: "saved" } } : {}),
+        })),
+        access_token: config.token,
+      }),
       cache: "no-store",
     });
     if (!response.ok) return { sent: false, reason: "rejected" };
