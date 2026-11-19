@@ -21,9 +21,19 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
   const [state, setState] = useState<FormState>("idle");
   const [result, setResult] = useState<Result | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const consentRef = useRef<HTMLInputElement | null>(null);
   const [country, setCountry] = useState("CO");
   const countryOptions = useSyncExternalStore(() => () => {}, () => countries, () => emptyCountryOptions);
   const started = useRef(false);
+
+  useEffect(() => {
+    if (!errors.consent) return;
+    const consent = consentRef.current;
+    if (!consent) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    consent.focus({ preventScroll: true });
+    consent.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+  }, [errors.consent]);
 
   useEffect(() => {
     const attribution = readAttribution(window.location.search);
@@ -50,7 +60,7 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
     if (!String(payload.country || "").trim()) localErrors.country = "Selecciona el país.";
     if (!String(payload.whatsapp || "").trim()) localErrors.whatsapp = "Revisa tu número de WhatsApp.";
     if (!String(payload.city || "").trim()) localErrors.city = "Escribe tu ciudad.";
-    if (payload.consent !== "on") localErrors.consent = "Acepta el tratamiento de datos para continuar.";
+    if (payload.consent !== "on") localErrors.consent = "Debes aceptar el tratamiento de datos para continuar";
     if (Object.keys(localErrors).length) { setErrors(localErrors); setState("error"); setResult({ ok: false, message: "Revisa los campos marcados." }); return; }
     const queryAttribution = readAttribution(window.location.search);
     let storedAttribution: Record<string, string> = {};
@@ -126,7 +136,13 @@ export function RegistrationForm({ redirectOnSuccess = false }: { redirectOnSucc
         <div className="field"><label htmlFor="name">Nombre</label><input id="name" name="name" autoComplete="name" placeholder="Tu nombre" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? "name-error" : undefined} />{errors.name && <small className="field-error" id="name-error" role="alert">{errors.name}</small>}</div>
         <div className="field"><label htmlFor="whatsapp">Número de WhatsApp</label><div className="phone-input"><span aria-hidden="true">+{getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}</span><input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="300 000 0000" aria-label={`Número de WhatsApp sin prefijo para +${getCountryCallingCode(country as Parameters<typeof getCountryCallingCode>[0])}`} aria-invalid={Boolean(errors.whatsapp)} aria-describedby={errors.whatsapp ? "whatsapp-error" : "whatsapp-help"} /></div><p className="field-help" id="whatsapp-help">Necesitamos el número para tu inscripción, pero la confirmación se realizará cuando tú nos envíes el código por WhatsApp.</p>{errors.whatsapp && <small className="field-error" id="whatsapp-error" role="alert">{errors.whatsapp}</small>}</div>
         <div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" autoComplete="address-level2" placeholder="Tu ciudad" aria-invalid={Boolean(errors.city)} aria-describedby={errors.city ? "city-error" : undefined} />{errors.city && <small className="field-error" id="city-error" role="alert">{errors.city}</small>}</div>
-        <label className="consent"><input type="checkbox" name="consent" aria-invalid={Boolean(errors.consent)} aria-describedby={errors.consent ? "consent-error" : undefined} /><span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad">Ver aviso de privacidad</a>.</span></label>{errors.consent && <small className="field-error" id="consent-error" role="alert">{errors.consent}</small>}
+        <div className={`consent-field${errors.consent ? " consent-field--error" : ""}`}>
+          <label className="consent" htmlFor="consent">
+            <input ref={consentRef} id="consent" type="checkbox" name="consent" aria-invalid={Boolean(errors.consent)} aria-describedby={errors.consent ? "consent-error" : undefined} onChange={() => { if (errors.consent) setErrors((current) => { const next = { ...current }; delete next.consent; return next; }); }} />
+            <span>Acepto que se gestione mi inscripción y las comunicaciones directamente relacionadas con esta experiencia. <a href="/privacidad" onClick={(event) => event.stopPropagation()}>Ver aviso de privacidad</a>.</span>
+          </label>
+          {errors.consent && <small className="field-error" id="consent-error" role="alert">{errors.consent}</small>}
+        </div>
         {state === "error" && <p className="form-error" role="alert">{result && !result.ok ? result.message : "Revisa los campos y vuelve a intentarlo."}</p>}
         <button className="button button-warm form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? "Guardando tu inscripción…" : "RESERVAR MI LUGAR GRATIS"}<span aria-hidden="true">→</span></button>
         <p className="form-footnote">Siguiente paso: enviar tu código por WhatsApp para recibir el enlace del grupo.</p>

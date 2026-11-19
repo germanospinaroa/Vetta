@@ -1,19 +1,59 @@
 {
-  "route": "/",
-  "preview": "https://vetta-mne3km2ae-germans-projects-baef13ff.vercel.app",
-  "viewports": [320, 375, 390, 430, 768, 1024, 1440],
-  "checks": {
-    "hero": "reviewed",
-    "responsive_reflow": "reviewed",
-    "primary_cta": "reviewed",
-    "registration_route": "preserved",
-    "reduced_motion": "css rule present",
-    "keyboard_faq": "native details and visible focus",
-    "operational_flow": "unchanged"
+  "route": "/registro",
+  "environment": "local Next.js dev server with VETTA_DEMO_MODE=true; no external services mutated",
+  "viewports": [
+    { "width": 320, "height": 1400, "screenshot": "evidence/consent-320-after.png" },
+    { "width": 360, "height": 1400, "screenshot": "evidence/consent-360-after.png" },
+    { "width": 375, "height": 1400, "screenshot": "evidence/consent-390-after.png" },
+    { "width": 390, "height": 1400, "screenshot": "evidence/consent-390-after.png" },
+    { "width": 430, "height": 1400, "screenshot": "evidence/consent-430-after.png" },
+    { "width": 768, "height": 1400, "screenshot": "evidence/consent-768-after.png" },
+    { "width": 1024, "height": 1400, "screenshot": "evidence/consent-1440-after.png" },
+    { "width": 1440, "height": 1400, "screenshot": "evidence/consent-1440-after.png" }
+  ],
+  "commands": [
+    "npm run lint",
+    "npm run typecheck",
+    "npm test",
+    "npm run build",
+    "git diff --check",
+    "Chrome headless/Chrome DevTools Protocol responsive interaction run"
+  ],
+  "checks": [
+    { "name": "initially_unchecked", "result": "passed: #consent.checked === false at all tested widths" },
+    { "name": "checkbox_size", "result": "passed: rendered checkbox is 28 x 28 CSS pixels" },
+    { "name": "direct_checkbox_selection", "result": "passed: native checkbox click toggles to checked" },
+    { "name": "associated_text_selection", "result": "passed: label text toggles the real checkbox" },
+    { "name": "privacy_link_independent", "result": "passed: href is /privacidad and click does not toggle the unchecked control" },
+    { "name": "missing_consent_validation", "result": "passed: no registration request; visible error is exactly 'Debes aceptar el tratamiento de datos para continuar'" },
+    { "name": "error_focus", "result": "passed: focus moves to #consent and scroll position brings the error into view" },
+    { "name": "error_clear", "result": "passed: checking consent removes the consent error and error border" },
+    { "name": "marked_submission", "result": "passed: intercepted browser run sent /api/register with consent=on and no client validation error" },
+    { "name": "horizontal_overflow", "result": "passed: document scrollWidth equals viewport width at 320, 360, 390, 430, 768 and 1440" },
+    { "name": "reduced_motion", "result": "passed: consent checkmark transition disabled under prefers-reduced-motion" },
+    { "name": "copy_and_api", "result": "passed: existing consent copy, fields, API route and tracking code preserved" }
+  ],
+  "evidence_files": [
+    "evidence/consent-mobile-390-before.png",
+    "evidence/consent-mobile-390-after.png",
+    "evidence/consent-mobile-390-error-after.png",
+    "evidence/consent-320-after.png",
+    "evidence/consent-360-after.png",
+    "evidence/consent-390-after.png",
+    "evidence/consent-430-after.png",
+    "evidence/consent-768-after.png",
+    "evidence/consent-1440-after.png"
+  ],
+  "results": {
+    "lint": "passed with 4 pre-existing warnings in components/vetta-landing-v7.tsx; 0 errors",
+    "typecheck": "passed",
+    "tests": "passed: 5 files, 76 tests",
+    "build": "passed: Next.js 16.4.0 production build",
+    "diff_check": "passed"
   },
-  "evidence_files": "evidence/qa-rebuild/home-*-qa.png",
   "limitations": [
-    "Preview environment does not exercise a real registration or WhatsApp send; no real messages were sent.",
-    "The preview screenshot uses the production cohort configuration only for public date/status rendering; it does not mutate Supabase."
+    "The chrome-devtools MCP could not start because the container runs Chrome as root; equivalent local Chrome headless/CDP checks were used instead.",
+    "The before image is a visual reconstruction of the previous native-checkbox treatment on the same rendered form; no production deployment was touched.",
+    "The marked-submission check intercepted /api/register locally and did not persist a real lead or send WhatsApp/analytics traffic."
   ]
 }
