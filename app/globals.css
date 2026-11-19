@@ -106,6 +106,22 @@
 @media print{.filter-v3-results{box-shadow:none;border:0;padding:0}.filter-v3-block{break-inside:avoid}.filter-v3-diagnosis{background:#fff;color:#142238}.filter-v3-diagnosis h2,.filter-v3-principal strong{color:#142238}.filter-v3-synthesis,.filter-v3-principal small{color:#33465a}.filter-v3-decision{background:#fff}}
 @media(max-width:640px){.next-move-mobile-fit{font-size:clamp(2.35rem,12vw,4.6rem)!important;max-width:100%!important}.next-move-mobile-fit i{display:block}}
 
+/* Registration consent: a real, high-contrast control with a generous touch target. */
+.registration-form .consent-field{display:grid;gap:8px;margin-top:2px;padding:12px;border:1px solid #d8e0e9;border-radius:12px;background:#f4f7ff}
+.registration-form .consent{display:flex;align-items:flex-start;gap:12px;min-height:44px;padding:2px;color:#35435a;font-size:13px;line-height:1.5;cursor:pointer}
+.registration-form .consent input[type="checkbox"]{appearance:none;width:28px;height:28px;min-width:28px;min-height:28px;margin:0;border:2px solid #59677b;border-radius:6px;background:#fff;display:grid;place-content:center;cursor:pointer}
+.registration-form .consent input[type="checkbox"]::after{content:"";width:12px;height:7px;border:solid #fff;border-width:0 0 3px 3px;transform:rotate(-45deg) scale(0);transition:transform 120ms ease}
+.registration-form .consent input[type="checkbox"]:checked{border-color:#2758e9;background:#2758e9}
+.registration-form .consent input[type="checkbox"]:checked::after{transform:rotate(-45deg) scale(1)}
+.registration-form .consent input[type="checkbox"]:focus-visible{outline:3px solid rgba(39,88,233,.35);outline-offset:3px}
+.registration-form .consent span{min-width:0}
+.registration-form .consent a{color:#2758e9;font-weight:700;text-underline-offset:3px}
+.registration-form .consent-field--error{border:2px solid #a6372c;background:#fff2f0}
+.registration-form .consent-field--error .consent input[type="checkbox"]{border-color:#a6372c}
+.registration-form .consent-field .field-error{margin:0 0 0 40px;color:#8b2d25;font-size:13px;line-height:1.4;font-weight:700}
+@media(max-width:480px){.registration-form .consent-field{padding:10px}.registration-form .consent{font-size:13px;gap:11px}}
+@media(prefers-reduced-motion:reduce){.registration-form .consent input[type="checkbox"]::after{transition:none}}
+
 /* Compact, non-modal consent choice: does not block the hero or the CTA. */
 .analytics-consent.analytics-consent-compact{position:fixed;left:50%;right:auto;bottom:12px;transform:translateX(-50%);z-index:50;width:min(780px,calc(100% - 24px));padding:10px 14px;display:flex;align-items:center;gap:14px;border-radius:12px;box-shadow:0 5px 24px rgba(20,34,56,.18);font-size:12px;line-height:1.35}
 .analytics-consent-compact p{margin:0;flex:1}
